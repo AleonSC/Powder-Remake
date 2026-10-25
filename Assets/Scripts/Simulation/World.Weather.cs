@@ -119,8 +119,9 @@ namespace PowderGame.Simulation
         }
 
         /// <summary>
-        /// Rises and drifts. Clouds soak it up; steam that reaches the top quarter of the
-        /// screen, or is still around when its time is up, condenses into a new cloud.
+        /// Rises and drifts. Clouds soak it up, and it condenses back into droplets on cool
+        /// glass and ice. Steam that reaches the top quarter of the screen, or is still
+        /// around when its time is up, condenses into a new cloud.
         /// </summary>
         void UpdSteam(int x, int y, int i)
         {
@@ -132,6 +133,7 @@ namespace PowderGame.Simulation
                 if (Life[j] < CloudCapacity) { Life[j]++; Del(i); return; }
             }
             else if (nt == E.Ice) { Set(i, E.Water); return; }
+            else if (nt == E.Glass && Rand() < 0.05f) { Set(i, E.Water); return; } // fogs up and drips
 
             // It condenses into cloud once it rises high enough, or wherever it is when its time runs out.
             if (--Life[i] <= 0 || (y < CloudLine && Rand() < 0.003f)) { Condense(i); return; }

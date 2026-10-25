@@ -69,7 +69,7 @@ direction) and **SuperBall** (launch velocity).
 | BUBBLE | Floats up and pops |
 | SMOKE | Rises and fades; fires give it off as they die |
 | SAND | Powder that melts into glass in magma or laser light; lightning fuses it into glass |
-| GLASS | Solid that acid can't eat and lasers shine straight through |
+| GLASS | Solid that acid can't eat; sunlight and lasers shine straight through; steam fogs up on it and drips back down as water |
 | SALT | Dissolves in water into salt water (sinks under fresh water, never freezes, boils back to salt); melts ice and snow |
 | SNOW | Light, fluttering powder that drifts in the wind, floats, and melts near heat |
 | WOOD | Smoulders from the outside in, throwing off fire and smoke, then crumbles to ash (seeds grow in ash); water puts it out |
@@ -100,7 +100,8 @@ moisture and wet ground.
   open water hit by sunlight also slowly evaporates, and sunlight dries mud and
   melts snow and ice. Anything solid above casts a shadow (clouds included); the
   sunlit sky is tinted blue so you can see them.
-- **Condensation:** steam soaks into clouds, or forms new ones high up.
+- **Condensation:** steam soaks into clouds, forms new ones high up, or fogs up
+  on cool glass and ice and drips back down.
 - **Rain:** clouds rain out the steam they hold; dry clouds don't rain.
 - **Soaking in:** powder that touches water becomes darker **mud**, which seeps
   its water down into dry powder, wicks it back up to a sunlit surface to dry,
@@ -109,6 +110,10 @@ moisture and wet ground.
 A lake next to a powder hill with a buried seed, with the sun on, runs the whole
 cycle by itself: the lake evaporates, clouds build, rain soaks into the hill and
 the seed grows into a tree.
+
+A **sealed glass terrarium** recycles its own water: sunlight shines through the
+glass, the water inside evaporates, condenses on the walls and lid, and drips
+back into the soil.
 
 **Tools:** WIND (push air the way you drag), AIR (raise pressure, blowing
 things away), DRAG (move particles), BLOCK (wall), ERASE, CLEAR.

@@ -169,5 +169,52 @@ namespace PowderGame.Tests
             Assert.Greater(Count(w, E.Mud), 0, "rain soaked into the ground");
             Assert.AreEqual(total, TotalWater(w), "not a drop created or lost");
         }
+
+        [Test]
+        public void SteamCondensesOnGlass()
+        {
+            var w = new World(11);
+            Fill(w, 100, 300, 150, 152, E.Glass); // a glass roof
+            Fill(w, 150, 250, 200, 210, E.Steam);
+            int steam = Count(w, E.Steam);
+            Run(w, 400);
+            Assert.Greater(Count(w, E.Water), steam / 2, "condensed into droplets");
+            Assert.AreEqual(0, Count(w, E.Cloud), "under glass it fogs up instead of making clouds");
+        }
+
+        [Test]
+        public void SealedTerrariumRecyclesItsWater()
+        {
+            // Sun shines through a sealed glass box: water evaporates, condenses on the
+            // glass, drips back into the soil, and waters a buried seed.
+            var w = new World(12) { Sun = World.SunLevel.High };
+            Fill(w, 140, 260, 200, 202, E.Glass);   // lid
+            Fill(w, 140, 142, 200, H, E.Glass);     // walls
+            Fill(w, 258, 260, 200, H, E.Glass);
+            Fill(w, 142, 258, 280, H, E.Powder);
+            w.Set(284 * W + 230, E.Seed);
+            Fill(w, 142, 180, 270, 280, E.Water);   // a pond at the far end from the seed
+            int total = TotalWater(w);
+            bool fogged = false;
+            for (int k = 0; k < 8000; k++)
+            {
+                w.Step();
+                if (!fogged)
+                    for (int x = 142; x < 258; x++)
+                        if (w.Type[202 * W + x] == E.Water) { fogged = true; break; }
+            }
+            Assert.IsTrue(fogged, "droplets formed on the lid");
+            int outside = 0;
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    bool inside = x >= 142 && x < 258 && y >= 202;
+                    byte t = w.Type[y * W + x];
+                    if (!inside && (t == E.Water || t == E.Steam || t == E.Mud || t == E.Cloud)) outside++;
+                }
+            Assert.AreEqual(0, outside, "nothing escaped the glass");
+            Assert.LessOrEqual(TotalWater(w), total, "no water created (the tree drinks some)");
+            Assert.Greater(Count(w, E.Plant), 10, "the seed got watered and grew");
+        }
     }
 }
