@@ -1,0 +1,10 @@
+{
+  "name": "powder-remake",
+  "version": "0.1.0",
+  "description": "A browser remake of Dan-Ball's Powder Game",
+  "private": true,
+  "scripts": {
+    "test": "node test/smoke.js",
+    "start": "python3 -m http.server 8000"
+  }
+}

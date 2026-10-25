@@ -1,0 +1,75 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: #151515;
+  color: #ddd;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+#app {
+  width: min(800px, 100vw);
+  margin: 12px 0;
+  background: #404040;
+  border: 2px solid #000;
+  user-select: none;
+}
+
+#screen {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  image-rendering: pixelated;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+#menu {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  padding: 6px 4px 2px;
+}
+
+#menu button {
+  position: relative;
+  background: none;
+  border: 0;
+  padding: 2px 4px 2px 16px;
+  text-align: left;
+  font: bold clamp(10px, 2.2vw, 16px) 'Courier New', Courier, monospace;
+  text-shadow: 1px 1px 0 #000;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#menu button:hover { background: #505050; }
+#menu button.blank { cursor: default; background: none; }
+
+/* Red marker = left mouse, blue marker = right mouse. */
+#menu button.sel-l::before,
+#menu button.sel-r::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  width: 7px;
+  height: 7px;
+}
+#menu button.sel-l::before { top: 3px; background: #ff3030; }
+#menu button.sel-r::after { bottom: 3px; background: #3060ff; }
+
+#status {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 8px 4px;
+  font-size: clamp(9px, 1.8vw, 13px);
+  color: #e0e0e0;
+}
+
+#status .hint { color: #999; }
