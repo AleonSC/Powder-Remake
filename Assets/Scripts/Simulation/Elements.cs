@@ -14,7 +14,8 @@ namespace PowderGame.Simulation
             Fan = 7, Ice = 8, SuperBall = 9, Clone = 10, Fireworks = 11, Oil = 12, C4 = 13, Stone = 14,
             Magma = 15, Virus = 16, Nitro = 17, Ant = 18, Torch = 19, Gas = 20, Soapy = 21, Thunder = 22,
             Metal = 23, Bomb = 24, Laser = 25, Acid = 26, Bubble = 27, Plant = 28, Steam = 29, Spark = 30,
-            Rocket = 31, Bolt = 32;
+            Rocket = 31, Bolt = 32, Sand = 33, Glass = 34, Salt = 35, SaltWater = 36, Snow = 37, Wood = 38,
+            Ash = 39, Smoke = 40, Mercury = 41, Cloud = 42, Cryo = 43, Void = 44;
 
         /// <summary>"Type" of anything outside the world.</summary>
         public const byte Out = 255;
@@ -85,6 +86,18 @@ namespace PowderGame.Simulation
             D(E.Spark, "SPARK", null, MoveState.Special, 0xffffff, life0: 20, lifeR: 25),
             D(E.Rocket, "ROCKET", null, MoveState.Special, 0xffe0a0, life0: 20, lifeR: 25),
             D(E.Bolt, "BOLT", null, MoveState.Gas, 0xffffc0, life0: 3, lifeR: 3),
+            D(E.Sand, "SAND", "SAND", MoveState.Powder, 0xf0dc82, dens: 3.2f, air: 0.5f),
+            D(E.Glass, "GLASS", "GLASS", MoveState.Static, 0x9ac8c8, blocks: true),
+            D(E.Salt, "SALT", "SALT", MoveState.Powder, 0xf4f4f4, dens: 3, air: 0.5f),
+            D(E.SaltWater, "SALTWATER", null, MoveState.Liquid, 0x4a6ee8, dens: 2.1f, air: 0.5f, disp: 5),
+            D(E.Snow, "SNOW", "SNOW", MoveState.Powder, 0xf8f8ff, dens: 1.2f, air: 1.2f),
+            D(E.Wood, "WOOD", "WOOD", MoveState.Static, 0x8a5a2b, flam: 0.03f, blocks: true),
+            D(E.Ash, "ASH", null, MoveState.Powder, 0x6e6e6e, dens: 3, air: 1),
+            D(E.Smoke, "SMOKE", "SMOKE", MoveState.Gas, 0x5a5a5a, dens: 0.06f, air: 1, life0: 60, lifeR: 90),
+            D(E.Mercury, "MERCURY", "MERCURY", MoveState.Liquid, 0xb4b4c8, dens: 6, air: 0.1f, disp: 3),
+            D(E.Cloud, "CLOUD", "CLOUD", MoveState.Special, 0xd2d2e1, air: 0.8f),
+            D(E.Cryo, "CRYO", "CRYO", MoveState.Liquid, 0xa0e8ff, dens: 1.6f, air: 0.5f, disp: 4, life0: 300, lifeR: 300),
+            D(E.Void, "VOID", "VOID", MoveState.Static, 0x3c1450),
         };
 
         public static readonly MoveState[] State = new MoveState[256];

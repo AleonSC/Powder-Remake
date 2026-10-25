@@ -263,6 +263,16 @@ namespace PowderGame.Simulation
                 case E.Spark: UpdSpark(x, y, i); break;
                 case E.Rocket: UpdRocket(x, y, i); break;
                 case E.Bolt: if (--Life[i] <= 0) Del(i); break;
+                case E.Sand: case E.Ash: MovePowder(x, y, i, t); break;
+                case E.Salt: UpdSalt(x, y, i); break;
+                case E.Snow: UpdSnow(x, y, i); break;
+                case E.SaltWater: MoveLiquid(x, y, i, t); break;
+                case E.Wood: UpdWood(x, y, i); break;
+                case E.Smoke: if (--Life[i] <= 0) Del(i); else MoveGas(x, y, i, t, 0.6f); break;
+                case E.Mercury: UpdMercury(x, y, i); break;
+                case E.Cloud: UpdCloud(x, y, i); break;
+                case E.Cryo: UpdCryo(x, y, i); break;
+                case E.Void: UpdVoid(x, y); break;
             }
         }
 
@@ -392,7 +402,8 @@ namespace PowderGame.Simulation
                 return;
             }
             if (t == E.Fireworks) { Set(j, E.Rocket); return; }
-            if (t == E.Ice) { Set(j, E.Water); return; }
+            if (t == E.Ice || t == E.Snow) { Set(j, E.Water); return; }
+            if (t == E.Wood) { if (Life[j] == 0) Life[j] = (short)(80 + Rnd(80)); return; }
             Set(j, E.Fire);
             if (t == E.Oil) Life[j] += 60;
             else if (t == E.Gas) Life[j] = (short)(8 + Rnd(8));
@@ -429,7 +440,7 @@ namespace PowderGame.Simulation
                             if (Rand() < 0.5f) { Set(j, E.Fire); Life[j] = (short)(5 + Rnd(15)); }
                             break;
                         case E.Water: if (Rand() < 0.3f) Set(j, E.Steam); break;
-                        case E.Ice: Set(j, E.Water); break;
+                        case E.Ice: case E.Snow: Set(j, E.Water); break;
                         case E.Fireworks: Ignite(j); break;
                         case E.Bubble: Del(j); break;
                         default:
@@ -475,7 +486,11 @@ namespace PowderGame.Simulation
 
         void UpdFire(int x, int y, int i)
         {
-            if (--Life[i] <= 0) { Del(i); return; }
+            if (--Life[i] <= 0)
+            {
+                if (Rand() < 0.1f) Set(i, E.Smoke); else Del(i);
+                return;
+            }
             for (int k = 0; k < 8; k++)
             {
                 int nx = x + DX8[k], ny = y + DY8[k];
@@ -483,14 +498,14 @@ namespace PowderGame.Simulation
                 int j = ny * W + nx;
                 byte nt = Type[j];
                 if (nt == 0 || nt == E.Fire) continue;
-                if (nt == E.Water || nt == E.Soapy)
+                if (nt == E.Water || nt == E.Soapy || nt == E.SaltWater || nt == E.Cryo)
                 {
-                    if (Rand() < 0.1f) Set(j, E.Steam);
+                    if (Rand() < 0.1f) Set(j, nt == E.SaltWater ? E.Salt : nt == E.Cryo ? E.Empty : E.Steam);
                     Del(i);
                     return;
                 }
                 if (Flam[nt] != 0 && Rand() < Flam[nt]) Ignite(j);
-                else if (nt == E.Ice && Rand() < 0.05f) Set(j, E.Water);
+                else if ((nt == E.Ice && Rand() < 0.05f) || (nt == E.Snow && Rand() < 0.2f)) Set(j, E.Water);
             }
             if (Rand() < 0.7f) MoveGas(x, y, i, E.Fire, 0.6f);
         }
@@ -501,7 +516,7 @@ namespace PowderGame.Simulation
             if (Rand() < 0.02f)
             {
                 byte below = At(x, y + 1);
-                if (below == E.Powder || below == E.Plant)
+                if (below == E.Powder || below == E.Plant || below == E.Ash)
                 {
                     Set(i, E.Plant);
                     Life[i] = (short)(30 + Rnd(60));
@@ -571,7 +586,7 @@ namespace PowderGame.Simulation
         {
             int k = Rnd(8), nx = x + DX8[k], ny = y + DY8[k];
             byte nt = At(nx, ny);
-            if (nt != 0 && nt != E.Out && nt != E.Acid && nt != E.Wall && nt != E.Water &&
+            if (nt != 0 && nt != E.Out && nt != E.Acid && nt != E.Wall && nt != E.Glass && nt != E.Water &&
                 nt != E.Bolt && nt != E.Fire && nt != E.Steam)
             {
                 if (Rand() < (nt == E.Metal ? 0.01f : 0.1f))
@@ -591,8 +606,14 @@ namespace PowderGame.Simulation
                 byte nt = At(nx, ny);
                 if (nt == 0 || nt == E.Out) continue;
                 int j = ny * W + nx;
-                if (nt == E.Water) { Set(i, E.Stone); Set(j, E.Steam); return; }
-                if (nt == E.Ice) Set(j, E.Water);
+                if (nt == E.Water || nt == E.SaltWater || nt == E.Cryo)
+                {
+                    Set(i, E.Stone);
+                    Set(j, nt == E.Cryo ? E.Empty : E.Steam);
+                    return;
+                }
+                if (nt == E.Ice || nt == E.Snow) Set(j, E.Water);
+                else if (nt == E.Sand) { if (Rand() < 0.05f) Set(j, E.Glass); }
                 else if (Flam[nt] != 0 && Rand() < Flam[nt]) Ignite(j);
             }
             if (Rand() < 0.01f && At(x, y - 1) == E.Empty) Set(i - W, E.Fire);
@@ -680,8 +701,11 @@ namespace PowderGame.Simulation
             }
         }
 
-        /// <summary>Metal carries electricity: Life &gt; 0 is charged, Life &lt; 0 is cooling down.</summary>
-        void UpdMetal(int x, int y, int i)
+        /// <summary>
+        /// Electricity in metal and mercury: Life &gt; 0 is charged, Life &lt; 0 is cooling down.
+        /// A charge spreads to touching conductors and ignites flammable neighbours.
+        /// </summary>
+        void Conduct(int x, int y, int i)
         {
             int l = Life[i];
             if (l > 0)
@@ -692,7 +716,7 @@ namespace PowderGame.Simulation
                     byte nt = At(nx, ny);
                     if (nt == 0 || nt == E.Out) continue;
                     int j = ny * W + nx;
-                    if (nt == E.Metal) { if (Life[j] == 0) Life[j] = 10; }
+                    if (nt == E.Metal || nt == E.Mercury) { if (Life[j] == 0) Life[j] = 10; }
                     else if (Flam[nt] != 0 && Rand() < 0.3f) Ignite(j);
                 }
                 Life[i] = (short)(l == 1 ? -15 : l - 1);
@@ -702,6 +726,8 @@ namespace PowderGame.Simulation
                 Life[i] = (short)(l + 1);
             }
         }
+
+        void UpdMetal(int x, int y, int i) { Conduct(x, y, i); }
 
         void UpdSuperBall(int x, int y, int i)
         {
@@ -763,7 +789,8 @@ namespace PowderGame.Simulation
                     ci = j; cx = nx; cy = ny;
                     continue;
                 }
-                if (nt == E.Metal) { if (Life[j] >= 0) Life[j] = 12; }
+                if (nt == E.Metal || nt == E.Mercury) { if (Life[j] >= 0) Life[j] = 12; }
+                else if (nt == E.Sand) Set(j, E.Glass);
                 else if (Flam[nt] != 0 || Explode[nt] != 0) Ignite(j);
                 else if (nt == E.Ice) Set(j, E.Water);
                 else if (nt == E.Water && Rand() < 0.5f) Set(j, E.Steam);
@@ -791,6 +818,13 @@ namespace PowderGame.Simulation
                     continue;
                 }
                 byte nt = At(nx, ny);
+                if (nt == E.Glass) // shine through to the far side
+                {
+                    int gx = nx, gy = ny;
+                    while (At(gx, gy) == E.Glass) { gx += dx; gy += dy; }
+                    int g = Enterable(gx, gy);
+                    if (g >= 0) { Swap(ci, g); ci = g; cx = gx; cy = gy; continue; }
+                }
                 if (nt == E.Metal) // mirror
                 {
                     bool bx = dx != 0 && Enterable(cx + dx, cy) == -1;
@@ -811,8 +845,10 @@ namespace PowderGame.Simulation
         void Heat(int j, byte t)
         {
             if (Flam[t] != 0 || Explode[t] != 0) Ignite(j);
-            else if (t == E.Ice) Set(j, E.Water);
+            else if (t == E.Ice || t == E.Snow) Set(j, E.Water);
             else if (t == E.Water || t == E.Soapy) { if (Rand() < 0.3f) Set(j, E.Steam); }
+            else if (t == E.SaltWater) { if (Rand() < 0.3f) Set(j, E.Salt); }
+            else if (t == E.Sand) { if (Rand() < 0.3f) Set(j, E.Glass); }
             else if (t == E.Stone) { if (Rand() < 0.3f) Set(j, E.Magma); }
             else if (State[t] == MoveState.Powder && Rand() < 0.3f) Del(j);
         }

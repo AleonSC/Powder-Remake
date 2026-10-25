@@ -22,18 +22,19 @@ namespace PowderGame
         static readonly int[] PenSizes = { 0, 1, 2, 3, 4, 6, 8, 12, 16 };
         static readonly float[] Speeds = { 1f, 2f, 0.5f };
 
-        // Mirrors the original layout. Element keys, tool names, or #actions.
+        // Element keys, tool names, or #actions. The first three columns keep the
+        // original's elements in its order; the fourth holds the newer materials.
         static readonly string[][] Menu =
         {
-            new[] { "POWDER", "FIREWORKS", "GAS", "WIND", "WALL", "SAVE" },
-            new[] { "WATER", "OIL", "SOAPY", "AIR", "ERASE", "LOAD" },
-            new[] { "FIRE", "C4", "THUNDER", "DRAG", "CLEAR", "" },
-            new[] { "SEED", "STONE", "METAL", "BUBBLE", "", "" },
-            new[] { "GUNPOWDER", "MAGMA", "BOMB", "", "#VIEW", "#SIDE" },
-            new[] { "FAN", "VIRUS", "LASER", "", "#PEN", "" },
-            new[] { "ICE", "NITRO", "ACID", "", "#SPEED", "" },
-            new[] { "SUPERBALL", "ANT", "", "PLAYER", "#START", "" },
-            new[] { "CLONE", "TORCH", "", "", "", "#RESET" },
+            new[] { "POWDER", "FIREWORKS", "GAS", "SAND", "WIND", "SAVE" },
+            new[] { "WATER", "OIL", "SOAPY", "GLASS", "AIR", "LOAD" },
+            new[] { "FIRE", "C4", "THUNDER", "SALT", "DRAG", "#VIEW" },
+            new[] { "SEED", "STONE", "METAL", "SNOW", "WALL", "#SIDE" },
+            new[] { "GUNPOWDER", "MAGMA", "BOMB", "WOOD", "ERASE", "#PEN" },
+            new[] { "FAN", "VIRUS", "LASER", "MERCURY", "PLAYER", "#SPEED" },
+            new[] { "ICE", "NITRO", "ACID", "CLOUD", "CLEAR", "#START" },
+            new[] { "SUPERBALL", "ANT", "BUBBLE", "CRYO", "", "#RESET" },
+            new[] { "CLONE", "TORCH", "SMOKE", "VOID", "", "" },
         };
 
         static float MenuH { get { return MenuPad + Menu.Length * RowH + StatusH; } }
@@ -308,7 +309,18 @@ namespace PowderGame
                         case E.Empty: c = airView ? airBg[arow + (x >> 2)] : bg; break;
                         case E.Fire: c = fireLut[Mathf.Min(63, life[i] * 2)]; break;
                         case E.Magma: c = lut[t * 16 + (((shade[i] + frame) >> 2) & 15)]; break;
-                        case E.Metal: c = life[i] > 0 ? charged : lut[t * 16 + (shade[i] >> 4)]; break;
+                        case E.Metal: case E.Mercury: c = life[i] > 0 ? charged : lut[t * 16 + (shade[i] >> 4)]; break;
+                        case E.Wood: // glowing embers while burning
+                            c = life[i] > 0 ? fireLut[24 + ((shade[i] + frame) & 31)] : lut[t * 16 + (shade[i] >> 4)];
+                            break;
+                        case E.Smoke: // fades out
+                        {
+                            Color32 s0 = lut[t * 16 + (shade[i] >> 4)];
+                            float f = Mathf.Min(1, life[i] / 40f);
+                            c = new Color32((byte)(s0.r * f), (byte)(s0.g * f), (byte)(s0.b * f), 255);
+                            break;
+                        }
+                        case E.Void: c = lut[t * 16 + (((shade[i] + frame) >> 1) & 15)]; break;
                         case E.Spark: c = sparkLut[(shade[i] & 7) * 16 + Mathf.Clamp(life[i], 0, 15)]; break;
                         case E.Bolt: c = world.Vx[i] != 0 ? laser : bolt; break;
                         default: c = lut[t * 16 + (shade[i] >> 4)]; break;

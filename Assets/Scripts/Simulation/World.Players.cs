@@ -43,7 +43,7 @@ namespace PowderGame.Simulation
         static bool IsDeadly(byte t)
         {
             return t == E.Fire || t == E.Magma || t == E.Acid || t == E.Thunder || t == E.Laser ||
-                   t == E.Bolt || t == E.Virus;
+                   t == E.Bolt || t == E.Virus || t == E.Cryo || t == E.Void;
         }
 
         static bool CanCarry(byte t)

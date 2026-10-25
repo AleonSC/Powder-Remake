@@ -67,6 +67,16 @@ direction) and **SuperBall** (launch velocity).
 | LASER | Beam that heats, melts and ignites; bounces off metal |
 | ACID | Dissolves most things (slowly eats metal) |
 | BUBBLE | Floats up and pops |
+| SMOKE | Rises and fades; fires give it off as they die |
+| SAND | Powder that melts into glass in magma or laser light; lightning fuses it into glass |
+| GLASS | Solid that acid can't eat and lasers shine straight through |
+| SALT | Dissolves in water into salt water (sinks under fresh water, never freezes, boils back to salt); melts ice and snow |
+| SNOW | Light, fluttering powder that drifts in the wind, floats, and melts near heat |
+| WOOD | Smoulders from the outside in, throwing off fire and smoke, then crumbles to ash (seeds grow on ash); water puts it out |
+| MERCURY | Heaviest liquid (stone floats on it); conducts electricity like metal |
+| CLOUD | Hangs in the air, drifts with the wind, rains, and now and then throws lightning |
+| CRYO | Liquid nitrogen: freezes water, puts out fire, turns magma to stone, then boils away |
+| VOID | Black hole: swallows anything that touches it and sucks in the air around it |
 
 **PLAYER:** click to drop a stick figure (up to two; the first uses the arrow
 keys, the second WASD). It walks up small ledges, swims, and gets thrown
@@ -90,6 +100,7 @@ Assets/
   Scripts/Simulation/               engine-independent simulation (no UnityEngine)
     Elements.cs                     material definitions and lookup tables
     World.cs                        cellular automaton + air field
+    World.Materials.cs              sand, salt, wood, mercury, cloud, cryo, void...
     World.Players.cs, Player.cs     the PLAYER stick figures
   Scripts/Game/PowderGameApp.cs     rendering, IMGUI menu, input, main loop
   Tests/EditMode/WorldTests.cs      NUnit physics tests
@@ -123,7 +134,8 @@ Without Unity (needs Mono's `mcs`): `tools/run-sim-tests.sh`.
 
 ## Web version
 
-The original browser version lives in `web/` (it does not have PLAYER). Open `web/index.html` directly,
+The original browser version lives in `web/` (it does not have PLAYER or the
+materials from SAND onwards). Open `web/index.html` directly,
 and run its tests with `cd web && npm test`.
 
 ## Not yet implemented
