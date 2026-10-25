@@ -23,6 +23,7 @@ namespace PowderGame.Simulation
         {
             int k = Rnd(8);
             if (At(x + DX8[k], y + DY8[k]) == E.Water && Rand() < 0.002f) { Set(i, E.Water); return; }
+            if (Sunlit(x, y) && Rand() < SunRate) { Set(i, E.Water); return; }
             if (Rand() < 0.4f)
             {
                 if (AirPush(x, y, i, E.Snow) == -1) TryMove(i, x + Rnd(3) - 1, y);

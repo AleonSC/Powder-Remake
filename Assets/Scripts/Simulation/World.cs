@@ -81,6 +81,7 @@ namespace PowderGame.Simulation
             tp = new float[AN];
             ablock = new bool[AN];
             acount = new ushort[AN];
+            SunTop = new int[W];
             rng = seed != 0 ? seed : (uint)Environment.TickCount | 1u;
         }
 
@@ -98,6 +99,7 @@ namespace PowderGame.Simulation
                 copy.Load(ms);
             }
             copy.SidesOpen = SidesOpen;
+            copy.Sun = Sun;
             return copy;
         }
 
@@ -210,6 +212,7 @@ namespace PowderGame.Simulation
         {
             Frame++;
             StepAir();
+            ComputeSunlight();
             int f = Frame;
             for (int y = H - 1; y >= 0; y--)
             {
@@ -237,7 +240,9 @@ namespace PowderGame.Simulation
             }
             switch (t)
             {
-                case E.Powder: case E.Stone: case E.Gunpowder: case E.Fireworks:
+                case E.Powder: UpdPowder(x, y, i); break;
+                case E.Mud: UpdMud(x, y, i); break;
+                case E.Stone: case E.Gunpowder: case E.Fireworks:
                     MovePowder(x, y, i, t); break;
                 case E.Seed: UpdSeed(x, y, i); break;
                 case E.Bomb: UpdBomb(x, y, i); break;
@@ -252,7 +257,7 @@ namespace PowderGame.Simulation
                 case E.Bubble: UpdBubble(x, y, i); break;
                 case E.Fan: UpdFan(x, y, i); break;
                 case E.Torch: UpdTorch(x, y); break;
-                case E.Ice: UpdIce(x, y); break;
+                case E.Ice: UpdIce(x, y, i); break;
                 case E.Clone: UpdClone(x, y, i); break;
                 case E.Virus: UpdVirus(x, y); break;
                 case E.Metal: UpdMetal(x, y, i); break;
@@ -601,8 +606,9 @@ namespace PowderGame.Simulation
             }
         }
 
-        void UpdIce(int x, int y)
+        void UpdIce(int x, int y, int i)
         {
+            if (Sunlit(x, y) && Rand() < SunRate * 0.5f) { Set(i, E.Water); return; }
             int k = Rnd(8), nx = x + DX8[k], ny = y + DY8[k];
             if (At(nx, ny) == E.Water && Rand() < 0.003f) Set(ny * W + nx, E.Ice);
         }

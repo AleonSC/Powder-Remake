@@ -44,7 +44,7 @@ direction) and **SuperBall** (launch velocity).
 | POWDER | Falls and piles up; burns slowly |
 | WATER | Flows and levels out; puts out fire; boils to steam on anything hot (fire, magma, torches, burning wood) |
 | FIRE | Rises and flickers out; ignites anything flammable |
-| SEED | Buried in powder (or ash) with water nearby, sprouts a branching tree with leaves; any part of the tree touching water drinks it and grows a new branch, so more water means more tree |
+| SEED | Buried in powder (or ash) with water nearby or damp soil, sprouts a branching tree with leaves; any part of the tree touching water drinks it and grows a new branch, so more water means more tree |
 | GUNPOWDER | Explodes in small chain-reacting blasts |
 | FAN | Blows air in the direction you drew it |
 | ICE | Slowly freezes neighbouring water; melts near heat |
@@ -75,7 +75,7 @@ direction) and **SuperBall** (launch velocity).
 | WOOD | Smoulders from the outside in, throwing off fire and smoke, then crumbles to ash (seeds grow in ash); water puts it out |
 | MERCURY | Heaviest liquid (stone floats on it); conducts electricity like metal |
 | CLOUD | Hangs in the air and drifts with the wind; soaks up steam and rains it back out (getting darker as it fills), and very wet clouds throw lightning. Dry clouds never rain |
-| STEAM | Rises and drifts; clouds absorb it. Steam collecting under the ceiling (or any roof) condenses into new clouds, so boiled water comes back as rain |
+| STEAM | Rises and drifts; clouds absorb it. Steam that rises into the top quarter of the screen condenses into new clouds, which fade away once they've rained dry |
 | CRYO | Liquid nitrogen: freezes water, puts out fire, turns magma to stone, then boils away |
 | VOID | Black hole: swallows anything that touches it and sucks in the air around it |
 
@@ -91,12 +91,31 @@ the nearest player, jumping over walls, and kick them; with no player nearby
 they wander and brawl with each other. Three hits knock a fighter out, and
 the same hazards as players kill them.
 
+### Water cycle
+
+Water is never created or destroyed: it moves between liquid, steam, cloud
+moisture and wet ground.
+
+- **Evaporation:** water boils on anything hot. With **SUN** on (LOW or HIGH),
+  open water hit by sunlight also slowly evaporates, and sunlight dries mud and
+  melts snow and ice. Anything solid above casts a shadow (clouds included); the
+  sunlit sky is tinted blue so you can see them.
+- **Condensation:** steam soaks into clouds, or forms new ones high up.
+- **Rain:** clouds rain out the steam they hold; dry clouds don't rain.
+- **Soaking in:** powder that touches water becomes darker **mud**, which seeps
+  its water down into dry powder, wicks it back up to a sunlit surface to dry,
+  and waters seeds and trees.
+
+A lake next to a powder hill with a buried seed, with the sun on, runs the whole
+cycle by itself: the lake evaporates, clouds build, rain soaks into the hill and
+the seed grows into a tree.
+
 **Tools:** WIND (push air the way you drag), AIR (raise pressure, blowing
 things away), DRAG (move particles), BLOCK (wall), ERASE, CLEAR.
 
 **Settings:** VIEW toggles the air view (red = high pressure, blue = low,
 green = wind speed). SIDE opens the screen edges so particles fall out of the
-world. PEN-S, SPEED, START/STOP, SAVE/LOAD (a file in
+world. SUN switches sunlight off / low / high. PEN-S, SPEED, START/STOP, SAVE/LOAD (a file in
 `Application.persistentDataPath`) and RESET do what they say.
 
 ## Project layout
@@ -108,7 +127,7 @@ Assets/
     Elements.cs                     material definitions and lookup tables
     World.cs                        cellular automaton + air field
     World.Materials.cs              sand, salt, wood, mercury, cryo, void...
-    World.Weather.cs                boiling, steam, clouds and rain
+    World.Weather.cs                the water cycle: sun, boiling, steam, clouds, rain, mud
     World.Plants.cs                 seeds and trees
     World.Players.cs, Player.cs     PLAYER stick figures (movement shared with fighters)
     World.Fighters.cs               FIGHTER AI and melee combat

@@ -71,14 +71,34 @@ namespace PowderGame.Tests
             Assert.LessOrEqual(water, steam, "no more rain than steam absorbed");
         }
 
+        /// <summary>Every drop of water, wherever it currently is.</summary>
+        static int TotalWater(World w)
+        {
+            int n = 0;
+            for (int i = 0; i < w.N; i++)
+            {
+                byte t = w.Type[i];
+                if (t == E.Water || t == E.Steam || t == E.Mud) n++;
+                else if (t == E.Cloud) n += w.Life[i];
+            }
+            return n;
+        }
+
         [Test]
-        public void TrappedSteamCondensesIntoClouds()
+        public void RisingSteamFormsCloudsThatRain()
         {
             var w = new World(5);
             Fill(w, 150, 250, 100, 120, E.Steam);
-            Run(w, 2500);
-            Assert.AreEqual(0, Count(w, E.Steam));
-            Assert.Greater(Count(w, E.Cloud), 100, "formed clouds under the ceiling");
+            int total = TotalWater(w);
+            bool clouds = false;
+            for (int k = 0; k < 3000; k++)
+            {
+                w.Step();
+                if (Count(w, E.Cloud) > 0) clouds = true;
+            }
+            Assert.IsTrue(clouds, "clouds formed");
+            Assert.AreEqual(0, Count(w, E.Steam), "all steam condensed");
+            Assert.Greater(Count(w, E.Water), total / 2, "and most of it rained back down");
         }
 
         [Test]

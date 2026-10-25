@@ -7,18 +7,30 @@ namespace PowderGame.Simulation
     {
         const int SeedEnergy = 30;
 
-        static bool IsSoil(byte t) { return t == E.Powder || t == E.Ash; }
+        static bool IsSoil(byte t) { return t == E.Powder || t == E.Ash || t == E.Mud; }
 
-        /// <summary>Falls like powder; sprouts once it is buried in powder (or ash) with water nearby.</summary>
+        /// <summary>
+        /// Falls like powder; sprouts once it is buried in powder (or ash) and has water:
+        /// damp soil (mud) around it, or a pool within a few dots.
+        /// </summary>
         void UpdSeed(int x, int y, int i)
         {
             if (MovePowder(x, y, i, E.Seed) != -1 || Rand() > 0.05f) return;
-            int soil = 0;
-            for (int k = 0; k < 8; k++) if (IsSoil(At(x + DX8[k], y + DY8[k]))) soil++;
+            int soil = 0, mud = -1;
+            for (int k = 0; k < 8; k++)
+            {
+                byte t = At(x + DX8[k], y + DY8[k]);
+                if (IsSoil(t)) soil++;
+                if (t == E.Mud) mud = (y + DY8[k]) * W + x + DX8[k];
+            }
             if (soil < 4) return; // needs to be covered, not just sitting on top
-            int water = FindNear(x, y, 3, E.Water);
-            if (water < 0) return;
-            Del(water);
+            if (mud >= 0) Set(mud, E.Powder); // drink from the damp soil
+            else
+            {
+                int water = FindNear(x, y, 3, E.Water);
+                if (water < 0) return;
+                Del(water);
+            }
             Set(i, E.Plant);
             Life[i] = (short)(SeedEnergy + Rnd(15));
             Vy[i] = -1;
@@ -35,8 +47,8 @@ namespace PowderGame.Simulation
 
         /// <summary>
         /// A tree. Life &gt; 0 marks a growing tip carrying that much energy and heading in
-        /// direction (Vx, Vy). Any other part of the tree that touches water drinks it and
-        /// buds a new branch there, so water makes it grow more.
+        /// direction (Vx, Vy). Any other part of the tree that touches water or damp soil
+        /// drinks it and buds a new branch there, so water makes it grow more.
         /// </summary>
         void UpdPlant(int x, int y, int i)
         {
@@ -46,9 +58,10 @@ namespace PowderGame.Simulation
                 return;
             }
             int k = Rnd(8), wx = x + DX8[k], wy = y + DY8[k];
-            if (At(wx, wy) == E.Water && Rand() < 0.03f)
+            byte wt = At(wx, wy);
+            if ((wt == E.Water || wt == E.Mud) && Rand() < 0.03f)
             {
-                Del(wy * W + wx);
+                if (wt == E.Mud) Set(wy * W + wx, E.Powder); else Del(wy * W + wx);
                 Life[i] = (short)(6 + Rnd(8));
                 SetDirection(i, -Math.PI / 2 + (Rand() - 0.5f) * 2.4f); // mostly upward
             }

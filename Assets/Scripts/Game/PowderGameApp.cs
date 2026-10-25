@@ -34,7 +34,7 @@ namespace PowderGame
             new[] { "FAN", "VIRUS", "LASER", "MERCURY", "PLAYER", "#SPEED" },
             new[] { "ICE", "NITRO", "ACID", "CLOUD", "FIGHTER", "#START" },
             new[] { "SUPERBALL", "ANT", "BUBBLE", "STEAM", "CLEAR", "#RESET" },
-            new[] { "CLONE", "TORCH", "SMOKE", "CRYO", "VOID", "" },
+            new[] { "CLONE", "TORCH", "SMOKE", "CRYO", "VOID", "#SUN" },
         };
 
         static float MenuH { get { return MenuPad + Menu.Length * RowH + StatusH; } }
@@ -293,6 +293,10 @@ namespace PowderGame
             short[] life = world.Life;
             int frame = world.Frame;
             var bg = new Color32(0, 0, 0, 255);
+            // Sunlit sky is faintly blue, so clouds and roofs cast visible shadows.
+            bool sun = world.Sun != World.SunLevel.Off;
+            var sky = world.Sun == World.SunLevel.High ? new Color32(18, 22, 48, 255) : new Color32(9, 11, 26, 255);
+            int[] sunTop = world.SunTop;
             var charged = new Color32(255, 255, 192, 255);
             var laser = new Color32(255, 64, 64, 255);
             var bolt = new Color32(255, 255, 192, 255);
@@ -318,7 +322,7 @@ namespace PowderGame
                     Color32 c;
                     switch (t)
                     {
-                        case E.Empty: c = airView ? airBg[arow + (x >> 2)] : bg; break;
+                        case E.Empty: c = airView ? airBg[arow + (x >> 2)] : sun && y < sunTop[x] ? sky : bg; break;
                         case E.Fire: c = fireLut[Mathf.Min(63, life[i] * 2)]; break;
                         case E.Magma: c = lut[t * 16 + (((shade[i] + frame) >> 2) & 15)]; break;
                         case E.Metal: case E.Mercury: c = life[i] > 0 ? charged : lut[t * 16 + (shade[i] >> 4)]; break;
@@ -547,6 +551,10 @@ namespace PowderGame
                 case "#SPEED": text = Speeds[speed] < 1 ? "SPEED/2" : "SPEEDx" + Speeds[speed]; return;
                 case "#START": text = running ? "STOP" : "START"; return;
                 case "#RESET": text = "RESET"; return;
+                case "#SUN":
+                    text = world.Sun == World.SunLevel.Off ? "SUN OFF" : world.Sun == World.SunLevel.Low ? "SUN LOW" : "SUN HIGH";
+                    color = new Color32(255, 220, 96, 255);
+                    return;
             }
             int id = Elements.IdOf(key);
             if (id < 0) { text = key; return; }
@@ -603,7 +611,8 @@ namespace PowderGame
             switch (key)
             {
                 case "CLEAR": world.Clear(); break;
-                case "#RESET": world.Clear(); world.ClearAir(); speed = 0; running = true; break;
+                case "#RESET": world.Clear(); world.ClearAir(); world.Sun = World.SunLevel.Off; speed = 0; running = true; break;
+                case "#SUN": world.Sun = (World.SunLevel)(((int)world.Sun + 1) % 3); break;
                 case "#VIEW": airView = !airView; break;
                 case "#SIDE": world.SidesOpen = !world.SidesOpen; break;
                 case "#PEN": pen = (pen + 1) % PenSizes.Length; break;
