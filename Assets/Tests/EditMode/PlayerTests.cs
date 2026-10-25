@@ -6,7 +6,7 @@ namespace PowderGame.Tests
 {
     public class PlayerTests
     {
-        const int W = World.W, H = World.H;
+        const int W = World.DefaultWidth, H = World.DefaultHeight;
 
         static void Run(World w, int steps)
         {
@@ -117,7 +117,7 @@ namespace PowderGame.Tests
             p.Shoot = true;
             Run(w, 30);
             int water = 0;
-            for (int i = 0; i < World.N; i++) if (w.Type[i] == E.Water) water++;
+            for (int i = 0; i < w.N; i++) if (w.Type[i] == E.Water) water++;
             Assert.Greater(water, 10, "shot water");
             Assert.AreEqual(E.Water, w.At(203, H - 6), "from the hand it faces");
         }

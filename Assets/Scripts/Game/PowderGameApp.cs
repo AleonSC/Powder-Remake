@@ -9,15 +9,14 @@ namespace PowderGame
 {
     public sealed class PowderGameApp : MonoBehaviour
     {
-        const int W = World.W, H = World.H;
-        // The layout is designed at a fixed virtual size and scaled to fill the window.
-        // Narrow windows put the menu under the play area like the original; wide
-        // (e.g. 16:9 fullscreen) windows put it in a panel to the right.
+        // The layout is designed in virtual units (Dot per world dot) and scaled to fill
+        // the window. The sandbox takes the window's shape, with the menu underneath.
         const float Dot = 2f;
-        const float CanvasW = W * Dot, CanvasH = H * Dot;
-        const float RowH = 24f, MenuPad = 8f, StatusH = 26f;
-        const float SidePanelW = 400f, SideStatusH = 48f;
-        const float SideRowH = (CanvasH - MenuPad - SideStatusH) / 18;
+        const float RowH = 24f, MenuPad = 8f, StatusH = 26f, MenuW = 800f;
+        // Smallest sandbox (the original's) and largest (to keep the frame rate up), in dots.
+        const int MinW = 400, MinH = 300, MaxW = 1024, MaxH = 640;
+        // Wait for the window to stop changing size before rebuilding the world.
+        const float ResizeDelay = 0.3f;
         const float StepTime = 1f / 60f;
 
         static readonly int[] PenSizes = { 0, 1, 2, 3, 4, 6, 8, 12, 16 };
@@ -37,15 +36,19 @@ namespace PowderGame
             new[] { "CLONE", "TORCH", "", "", "", "#RESET" },
         };
 
+        static float MenuH { get { return MenuPad + Menu.Length * RowH + StatusH; } }
+
         static readonly uint[] Hues = { 0xff4848, 0x48ff48, 0x5090ff, 0xffff48, 0xff48ff, 0x48ffff, 0xffa030, 0xffffff };
 
         World world;
+        int W, H;                 // world size in dots
+        float canvasW, canvasH;   // world size in virtual units
+        float resizePending = -1; // time the window size started differing from the world's
         Texture2D screen;
-        Color32[] pixels;
+        Color32[] pixels, airBg;
         readonly Color32[] lut = new Color32[256 * 16];
         readonly Color32[] fireLut = new Color32[64];
         readonly Color32[] sparkLut = new Color32[8 * 16];
-        readonly Color32[] airBg = new Color32[World.AN];
 
         string left = "POWDER", right = "ERASE";
         int pen = 3, speed;
@@ -72,7 +75,6 @@ namespace PowderGame
         int fpsSteps, fps;
 
         GUIStyle label, status;
-        bool sideLayout;
         bool toggleFullscreen; // requested from OnGUI, applied in Update
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -85,13 +87,9 @@ namespace PowderGame
         {
             Application.targetFrameRate = 60;
             if (!Application.isEditor) SetFullscreen(true);
-            world = new World();
-            screen = new Texture2D(W, H, TextureFormat.RGBA32, false)
-            {
-                filterMode = FilterMode.Point,
-                wrapMode = TextureWrapMode.Clamp,
-            };
-            pixels = new Color32[W * H];
+            int w, h;
+            TargetSize(out w, out h);
+            SetWorld(new World(w, h));
             BuildColors();
 
             if (Camera.main == null)
@@ -102,6 +100,33 @@ namespace PowderGame
                 cam.backgroundColor = new Color32(21, 21, 21, 255);
                 cam.orthographic = true;
             }
+        }
+
+        void SetWorld(World w)
+        {
+            world = w;
+            W = w.W;
+            H = w.H;
+            canvasW = W * Dot;
+            canvasH = H * Dot;
+            if (screen != null) Destroy(screen);
+            screen = new Texture2D(W, H, TextureFormat.RGBA32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            pixels = new Color32[W * H];
+            airBg = new Color32[w.AN];
+        }
+
+        /// <summary>The sandbox size, in dots, that fills the window with the menu underneath.</summary>
+        static void TargetSize(out int w, out int h)
+        {
+            float sw = Mathf.Max(1, Screen.width), sh = Mathf.Max(1, Screen.height);
+            // Scale so the original 400x300 layout just fits, then grow the sandbox into the rest.
+            float s = Mathf.Min(sw / (MinW * Dot), sh / (MinH * Dot + MenuH));
+            w = Mathf.Clamp(Mathf.FloorToInt(sw / s / Dot / World.AS) * World.AS, MinW, MaxW);
+            h = Mathf.Clamp(Mathf.FloorToInt((sh / s - MenuH) / Dot / World.AS) * World.AS, MinH, MaxH);
         }
 
         void OnDestroy()
@@ -137,6 +162,17 @@ namespace PowderGame
         void Update()
         {
             if (toggleFullscreen) { toggleFullscreen = false; ToggleFullscreen(); }
+
+            int tw, th;
+            TargetSize(out tw, out th);
+            if (tw == W && th == H) resizePending = -1;
+            else if (resizePending < 0) resizePending = Time.unscaledTime;
+            else if (Time.unscaledTime - resizePending > ResizeDelay)
+            {
+                SetWorld(world.Resized(tw, th));
+                resizePending = -1;
+            }
+
             ApplyInput();
             for (int s = 0; s < World.MaxPlayers; s++)
             {
@@ -251,7 +287,7 @@ namespace PowderGame
             if (airView)
             {
                 float[] ap = world.Pressure, avx = world.AirVx, avy = world.AirVy;
-                for (int i = 0; i < World.AN; i++)
+                for (int i = 0; i < world.AN; i++)
                 {
                     float p = ap[i], v = Mathf.Sqrt(avx[i] * avx[i] + avy[i] * avy[i]);
                     airBg[i] = new Color32((byte)Mathf.Min(255, p > 0 ? p * 12 : 0), (byte)Mathf.Min(255, v * 25),
@@ -261,7 +297,7 @@ namespace PowderGame
 
             for (int y = 0; y < H; y++)
             {
-                int row = y * W, arow = (y >> 2) * World.AW, dst = (H - 1 - y) * W; // textures are bottom-up
+                int row = y * W, arow = (y >> 2) * world.AW, dst = (H - 1 - y) * W; // textures are bottom-up
                 for (int x = 0; x < W; x++)
                 {
                     int i = row + x;
@@ -345,14 +381,8 @@ namespace PowderGame
                 status = new GUIStyle(label) { fontSize = 13, fontStyle = FontStyle.Normal };
             }
 
-            // Use whichever layout makes the play area bigger.
-            float bottomW = CanvasW, bottomH = CanvasH + MenuPad + Menu.Length * RowH + StatusH;
-            float sideW = CanvasW + SidePanelW, sideH = CanvasH;
-            float bottomScale = Mathf.Min(Screen.width / bottomW, Screen.height / bottomH);
-            float sideScale = Mathf.Min(Screen.width / sideW, Screen.height / sideH);
-            sideLayout = sideScale > bottomScale;
-            float vw = sideLayout ? sideW : bottomW, vh = sideLayout ? sideH : bottomH;
-            float s = sideLayout ? sideScale : bottomScale;
+            float vw = canvasW, vh = canvasH + MenuH;
+            float s = Mathf.Min(Screen.width / vw, Screen.height / vh);
             var offset = new Vector3((Screen.width - vw * s) / 2, (Screen.height - vh * s) / 2, 0);
             GUI.matrix = Matrix4x4.TRS(offset, Quaternion.identity, new Vector3(s, s, 1));
 
@@ -361,32 +391,24 @@ namespace PowderGame
 
             if (e.type == EventType.Repaint)
             {
-                GUI.DrawTexture(new Rect(0, 0, CanvasW, CanvasH), screen);
-                if (sideLayout) FillRect(new Rect(CanvasW, 0, SidePanelW, vh), new Color32(64, 64, 64, 255));
-                else FillRect(new Rect(0, CanvasH, vw, vh - CanvasH), new Color32(64, 64, 64, 255));
+                GUI.DrawTexture(new Rect(0, 0, canvasW, canvasH), screen);
+                FillRect(new Rect(0, canvasH, vw, vh - canvasH), new Color32(64, 64, 64, 255));
             }
             DrawMenu(e);
             DrawStatus(vh);
         }
 
-        /// <summary>Screen rectangle of the menu entry at Menu[row][col] in the current layout.</summary>
+        /// <summary>Screen rectangle of the menu entry at Menu[row][col]; the menu is centred under the sandbox.</summary>
         Rect MenuCell(int row, int col)
         {
-            if (!sideLayout)
-            {
-                float colW = CanvasW / 6;
-                return new Rect(col * colW, CanvasH + MenuPad + row * RowH, colW, RowH);
-            }
-            // Side panel: three columns, with the right half of the menu stacked below the left half.
-            float w = SidePanelW / 3;
-            int r = col < 3 ? row : row + Menu.Length;
-            return new Rect(CanvasW + (col % 3) * w, MenuPad + r * SideRowH, w, SideRowH);
+            float colW = MenuW / 6, x0 = (canvasW - MenuW) / 2;
+            return new Rect(x0 + col * colW, canvasH + MenuPad + row * RowH, colW, RowH);
         }
 
         void HandleCanvasEvents(Event e)
         {
             Vector2 mp = e.mousePosition;
-            hover = mp.x >= 0 && mp.x < CanvasW && mp.y >= 0 && mp.y < CanvasH;
+            hover = mp.x >= 0 && mp.x < canvasW && mp.y >= 0 && mp.y < canvasH;
             if (hover || mouseButton >= 0) mouse = new Vector2(Mathf.Floor(mp.x / Dot), Mathf.Floor(mp.y / Dot));
 
             switch (e.type)
@@ -493,23 +515,12 @@ namespace PowderGame
             string msg = Time.unscaledTime < flashUntil ? flashText : running ? "POWDER REMAKE" : "PAUSED";
             string stats = fps + "fps dot" + world.Count;
             const string hint = "arrows/WASD: player · F11: full screen";
-            if (sideLayout)
-            {
-                // Two lines at the bottom of the side panel.
-                float x = CanvasW + 8, w = SidePanelW - 16, y = bottom - SideStatusH;
-                Shadowed(new Rect(x, y, w, SideStatusH / 2), stats, white, status);
-                status.alignment = TextAnchor.MiddleRight;
-                Shadowed(new Rect(x, y, w, SideStatusH / 2), msg, white, status);
-                status.alignment = TextAnchor.MiddleLeft;
-                Shadowed(new Rect(x, y + SideStatusH / 2, w, SideStatusH / 2), hint, grey, status);
-                return;
-            }
             float sy = bottom - StatusH;
             Shadowed(new Rect(8, sy, 220, StatusH), stats, white, status);
             status.alignment = TextAnchor.MiddleCenter;
-            Shadowed(new Rect(0, sy, CanvasW, StatusH), msg, white, status);
+            Shadowed(new Rect(0, sy, canvasW, StatusH), msg, white, status);
             status.alignment = TextAnchor.MiddleRight;
-            Shadowed(new Rect(0, sy, CanvasW - 8, StatusH), hint, grey, status);
+            Shadowed(new Rect(0, sy, canvasW - 8, StatusH), hint, grey, status);
             status.alignment = TextAnchor.MiddleLeft;
         }
 

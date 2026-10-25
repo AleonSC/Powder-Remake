@@ -89,7 +89,7 @@ Assets/
   Scenes/Main.unity                 camera + Powder Game object
   Scripts/Simulation/               engine-independent simulation (no UnityEngine)
     Elements.cs                     material definitions and lookup tables
-    World.cs                        400x300 cellular automaton + air field
+    World.cs                        cellular automaton + air field
     World.Players.cs, Player.cs     the PLAYER stick figures
   Scripts/Game/PowderGameApp.cs     rendering, IMGUI menu, input, main loop
   Tests/EditMode/WorldTests.cs      NUnit physics tests
@@ -103,11 +103,15 @@ web/                                the original HTML5/JavaScript version
   coarse 100×75 air grid (pressure + velocity, smoothed and advected every
   step) carries wind from fans, explosions and the WIND tool, and nudges
   light particles around. The simulation runs at a fixed 60 steps per second.
-- **Rendering.** The world is written into a 400×300 point-filtered
-  `Texture2D` each frame and drawn, with the menu, through IMGUI (`OnGUI`).
-  The layout is scaled to fill the window: on wide screens the menu sits in a
-  panel beside the play area (1200×600 design size), otherwise it sits
-  underneath like the original (800×850). IMGUI needs
+- **Screen shape.** The sandbox takes the shape of the window: at least the
+  original 400×300 dots, growing wider (or taller) to fill the screen, e.g.
+  752×300 on a 16:9 display, up to 1024×640. Resizing the window rebuilds
+  the world at the new size, keeping its contents anchored to the floor and
+  centred (anything that no longer fits is cropped). Saves from a different
+  size load the same way.
+- **Rendering.** The world is written into a point-filtered `Texture2D` each
+  frame and drawn, with the menu underneath, through IMGUI (`OnGUI`), scaled
+  to fill the window. IMGUI needs
   no extra packages and works with both the old Input Manager and the new
   Input System.
 

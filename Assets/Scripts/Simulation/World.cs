@@ -8,9 +8,12 @@ namespace PowderGame.Simulation
 {
     public sealed partial class World
     {
-        public const int W = 400, H = 300, N = W * H;
-        /// <summary>Air cells are AS x AS pixels.</summary>
-        public const int AS = 4, AW = W / AS, AH = H / AS, AN = AW * AH;
+        public const int DefaultWidth = 400, DefaultHeight = 300;
+        /// <summary>Air cells are AS x AS pixels; world sizes must be multiples of AS.</summary>
+        public const int AS = 4;
+
+        /// <summary>Size in dots (W x H = N cells) and of the air grid (AW x AH = AN cells).</summary>
+        public readonly int W, H, N, AW, AH, AN;
 
         const float VMax = 15, PMax = 100, FanSpeed = 4;
 
@@ -28,19 +31,17 @@ namespace PowderGame.Simulation
         static readonly float[] Power = Elements.Power;
         static readonly bool[] Movable = Elements.Movable;
 
-        public readonly byte[] Type = new byte[N];
-        public readonly short[] Life = new short[N];
-        public readonly float[] Vx = new float[N];
-        public readonly float[] Vy = new float[N];
-        public readonly byte[] Shade = new byte[N];
-        readonly int[] stamp = new int[N];
+        public readonly byte[] Type;
+        public readonly short[] Life;
+        public readonly float[] Vx;
+        public readonly float[] Vy;
+        public readonly byte[] Shade;
+        readonly int[] stamp;
 
-        public float[] AirVx = new float[AN];
-        public float[] AirVy = new float[AN];
-        public float[] Pressure = new float[AN];
-        float[] tvx = new float[AN], tvy = new float[AN], tp = new float[AN];
-        readonly bool[] ablock = new bool[AN];
-        readonly ushort[] acount = new ushort[AN];
+        public float[] AirVx, AirVy, Pressure;
+        float[] tvx, tvy, tp;
+        readonly bool[] ablock;
+        readonly ushort[] acount;
 
         public int Frame = 1;
         /// <summary>When true, particles leaving the screen are deleted instead of hitting the edge.</summary>
@@ -54,9 +55,50 @@ namespace PowderGame.Simulation
 
         uint rng;
 
-        public World(uint seed = 0)
+        public World(uint seed = 0) : this(DefaultWidth, DefaultHeight, seed) { }
+
+        public World(int width, int height, uint seed = 0)
         {
+            if (width < 16 || height < 16 || width % AS != 0 || height % AS != 0)
+                throw new ArgumentException("World size must be at least 16 and a multiple of " + AS);
+            W = width;
+            H = height;
+            N = W * H;
+            AW = W / AS;
+            AH = H / AS;
+            AN = AW * AH;
+            Type = new byte[N];
+            Life = new short[N];
+            Vx = new float[N];
+            Vy = new float[N];
+            Shade = new byte[N];
+            stamp = new int[N];
+            AirVx = new float[AN];
+            AirVy = new float[AN];
+            Pressure = new float[AN];
+            tvx = new float[AN];
+            tvy = new float[AN];
+            tp = new float[AN];
+            ablock = new bool[AN];
+            acount = new ushort[AN];
             rng = seed != 0 ? seed : (uint)Environment.TickCount | 1u;
+        }
+
+        /// <summary>
+        /// A copy of this world at a new size. Contents stay anchored to the floor and
+        /// centred horizontally; anything that no longer fits is cropped.
+        /// </summary>
+        public World Resized(int width, int height)
+        {
+            var copy = new World(width, height);
+            using (var ms = new MemoryStream())
+            {
+                Save(ms);
+                ms.Position = 0;
+                copy.Load(ms);
+            }
+            copy.SidesOpen = SidesOpen;
+            return copy;
         }
 
         // ------------------------------------------------------------ random
@@ -1104,28 +1146,66 @@ namespace PowderGame.Simulation
             }
         }
 
+        /// <summary>
+        /// Loads a save. Saves of a different size are anchored to the floor and centred
+        /// horizontally; anything that doesn't fit is cropped.
+        /// </summary>
         public void Load(Stream stream)
         {
             using (var r = new BinaryReader(stream, System.Text.Encoding.UTF8, true))
             {
                 if (r.ReadInt32() != SaveMagic) throw new InvalidDataException("Not a save file");
                 int version = r.ReadInt32();
-                if (version < 1 || version > SaveVersion || r.ReadInt32() != W || r.ReadInt32() != H)
+                int sw = r.ReadInt32(), sh = r.ReadInt32();
+                if (version < 1 || version > SaveVersion || sw <= 0 || sh <= 0 || sw > 8192 || sh > 8192)
                     throw new InvalidDataException("Incompatible save file");
-                byte[] types = r.ReadBytes(N);
-                if (types.Length != N) throw new EndOfStreamException();
+                int sn = sw * sh;
+                byte[] types = r.ReadBytes(sn);
+                if (types.Length != sn) throw new EndOfStreamException();
+                var life = new short[sn];
+                var vx = new float[sn];
+                var vy = new float[sn];
+                for (int i = 0; i < sn; i++) life[i] = r.ReadInt16();
+                for (int i = 0; i < sn; i++) vx[i] = r.ReadSingle();
+                for (int i = 0; i < sn; i++) vy[i] = r.ReadSingle();
+                var players = new Player[MaxPlayers];
+                if (version >= 2)
+                {
+                    for (int s = 0; s < MaxPlayers; s++)
+                    {
+                        if (!r.ReadBoolean()) continue;
+                        players[s] = new Player { X = r.ReadSingle(), Y = r.ReadSingle(), Held = r.ReadByte() };
+                    }
+                }
+
                 Clear();
                 ClearAir();
-                Buffer.BlockCopy(types, 0, Type, 0, N);
-                for (int i = 0; i < N; i++) Life[i] = r.ReadInt16();
-                for (int i = 0; i < N; i++) Vx[i] = r.ReadSingle();
-                for (int i = 0; i < N; i++) Vy[i] = r.ReadSingle();
+                int ox = (W - sw) / 2, oy = H - sh;
+                for (int sy = 0; sy < sh; sy++)
+                {
+                    int y = sy + oy;
+                    if (y < 0 || y >= H) continue;
+                    for (int sx = 0; sx < sw; sx++)
+                    {
+                        int x = sx + ox;
+                        if (x < 0 || x >= W) continue;
+                        int i = y * W + x, j = sy * sw + sx;
+                        Type[i] = types[j];
+                        Life[i] = life[j];
+                        Vx[i] = vx[j];
+                        Vy[i] = vy[j];
+                    }
+                }
                 for (int i = 0; i < N; i++) Shade[i] = (byte)Rnd(256);
-                if (version < 2) return;
                 for (int s = 0; s < MaxPlayers; s++)
                 {
-                    if (!r.ReadBoolean()) continue;
-                    Players[s] = new Player { X = r.ReadSingle(), Y = r.ReadSingle(), Held = r.ReadByte() };
+                    Player p = players[s];
+                    if (p == null) continue;
+                    p.X += ox;
+                    p.Y += oy;
+                    int px = (int)Math.Floor(p.X), py = (int)Math.Floor(p.Y);
+                    bool fits = px - Player.HalfWidth >= 0 && px + Player.HalfWidth < W && py - Player.Height + 1 >= 0 && py < H;
+                    if (fits) Players[s] = p;
                 }
             }
         }

@@ -6,12 +6,12 @@ namespace PowderGame.Tests
 {
     public class WorldTests
     {
-        const int W = World.W, H = World.H;
+        const int W = World.DefaultWidth, H = World.DefaultHeight;
 
         static int Count(World w, byte t)
         {
             int n = 0;
-            for (int i = 0; i < World.N; i++) if (w.Type[i] == t) n++;
+            for (int i = 0; i < w.N; i++) if (w.Type[i] == t) n++;
             return n;
         }
 
@@ -47,7 +47,7 @@ namespace PowderGame.Tests
             Run(w, 1500);
             Assert.AreEqual(n, Count(w, E.Water), "water is conserved");
             int top = H;
-            for (int i = 0; i < World.N; i++) if (w.Type[i] == E.Water) { top = i / W; break; }
+            for (int i = 0; i < w.N; i++) if (w.Type[i] == E.Water) { top = i / W; break; }
             Assert.LessOrEqual(H - top, n / W + 4, "pool is flat");
         }
 
@@ -60,7 +60,7 @@ namespace PowderGame.Tests
             Run(w, 1500);
             double oilY = 0, waterY = 0;
             int no = 0, nw = 0;
-            for (int i = 0; i < World.N; i++)
+            for (int i = 0; i < w.N; i++)
             {
                 if (w.Type[i] == E.Oil) { oilY += i / W; no++; }
                 if (w.Type[i] == E.Water) { waterY += i / W; nw++; }
@@ -138,7 +138,7 @@ namespace PowderGame.Tests
             Run(w, 120);
             double sx = 0;
             int n = 0;
-            for (int i = 0; i < World.N; i++) if (w.Type[i] == E.Powder) { sx += i % W; n++; }
+            for (int i = 0; i < w.N; i++) if (w.Type[i] == E.Powder) { sx += i % W; n++; }
             Assert.Greater(sx / n, 90, "powder drifted right");
         }
 
@@ -151,7 +151,7 @@ namespace PowderGame.Tests
             w.InitParticle(150 * W + 60, E.Laser, 1, 0);
             Run(w, 50);
             int laser = -1;
-            for (int i = 0; i < World.N; i++) if (w.Type[i] == E.Laser) laser = i;
+            for (int i = 0; i < w.N; i++) if (w.Type[i] == E.Laser) laser = i;
             Assert.GreaterOrEqual(laser, 0, "laser still alive");
             Assert.Less(laser % W, 200);
             Assert.AreEqual(-1f, w.Vx[laser], "travelling back left");
@@ -170,7 +170,7 @@ namespace PowderGame.Tests
             Run(w, 500);
             w.SidesOpen = false;
             Run(w, 500);
-            for (int i = 0; i < World.AN; i++)
+            for (int i = 0; i < w.AN; i++)
             {
                 Assert.IsFalse(float.IsNaN(w.AirVx[i]) || float.IsNaN(w.AirVy[i]) || float.IsNaN(w.Pressure[i]), "air stays finite");
             }
