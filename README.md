@@ -11,6 +11,10 @@ and explode.
 2. In Unity Hub choose **Add > Add project from disk** and pick this folder.
 3. Open `Assets/Scenes/Main.unity` and press **Play**.
 
+Builds start in full screen at the monitor's resolution. In the editor, use
+the Game view's **Play Maximized** option (or press F11 while playing) to fill
+the screen.
+
 The game also starts itself in any scene (a `RuntimeInitializeOnLoadMethod`
 bootstrap creates the `PowderGameApp` object if none exists), so pressing Play
 in an empty scene works too. To make a standalone build use
@@ -25,6 +29,7 @@ scene list.
 | Drag on the play area | Paint with that button's material or tool |
 | Mouse wheel | Change pen size |
 | Space | Pause / resume |
+| F11 | Toggle full screen (in the editor: maximize the Game view) |
 | ← → / A D | Walk player 1 / player 2 |
 | ↑ / W | Jump (swim up in liquids) |
 | ↓ / S | Shoot the material the player is carrying |
@@ -100,7 +105,9 @@ web/                                the original HTML5/JavaScript version
   light particles around. The simulation runs at a fixed 60 steps per second.
 - **Rendering.** The world is written into a 400×300 point-filtered
   `Texture2D` each frame and drawn, with the menu, through IMGUI (`OnGUI`).
-  The layout is designed at 800×850 and scaled to fit the window. IMGUI needs
+  The layout is scaled to fill the window: on wide screens the menu sits in a
+  panel beside the play area (1200×600 design size), otherwise it sits
+  underneath like the original (800×850). IMGUI needs
   no extra packages and works with both the old Input Manager and the new
   Input System.
 

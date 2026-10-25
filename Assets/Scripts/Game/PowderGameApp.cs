@@ -10,10 +10,14 @@ namespace PowderGame
     public sealed class PowderGameApp : MonoBehaviour
     {
         const int W = World.W, H = World.H;
-        // The layout is designed at a fixed virtual size and scaled to fit the window.
+        // The layout is designed at a fixed virtual size and scaled to fill the window.
+        // Narrow windows put the menu under the play area like the original; wide
+        // (e.g. 16:9 fullscreen) windows put it in a panel to the right.
         const float Dot = 2f;
         const float CanvasW = W * Dot, CanvasH = H * Dot;
         const float RowH = 24f, MenuPad = 8f, StatusH = 26f;
+        const float SidePanelW = 400f, SideStatusH = 48f;
+        const float SideRowH = (CanvasH - MenuPad - SideStatusH) / 18;
         const float StepTime = 1f / 60f;
 
         static readonly int[] PenSizes = { 0, 1, 2, 3, 4, 6, 8, 12, 16 };
@@ -68,6 +72,8 @@ namespace PowderGame
         int fpsSteps, fps;
 
         GUIStyle label, status;
+        bool sideLayout;
+        bool toggleFullscreen; // requested from OnGUI, applied in Update
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void EnsureExists()
@@ -78,6 +84,7 @@ namespace PowderGame
         void Awake()
         {
             Application.targetFrameRate = 60;
+            if (!Application.isEditor) SetFullscreen(true);
             world = new World();
             screen = new Texture2D(W, H, TextureFormat.RGBA32, false)
             {
@@ -109,8 +116,27 @@ namespace PowderGame
             if (!focused) Array.Clear(keyDown, 0, keyDown.Length);
         }
 
+        static void SetFullscreen(bool on)
+        {
+            int sw = Display.main.systemWidth, sh = Display.main.systemHeight;
+            if (on) Screen.SetResolution(sw, sh, FullScreenMode.FullScreenWindow);
+            else Screen.SetResolution(Mathf.Min(1280, sw * 4 / 5), Mathf.Min(720, sh * 4 / 5), FullScreenMode.Windowed);
+        }
+
+        void ToggleFullscreen()
+        {
+#if UNITY_EDITOR
+            // Screen modes don't apply in the editor; maximize the Game view instead.
+            var view = UnityEditor.EditorWindow.focusedWindow;
+            if (view != null) view.maximized = !view.maximized;
+#else
+            SetFullscreen(Screen.fullScreenMode == FullScreenMode.Windowed);
+#endif
+        }
+
         void Update()
         {
+            if (toggleFullscreen) { toggleFullscreen = false; ToggleFullscreen(); }
             ApplyInput();
             for (int s = 0; s < World.MaxPlayers; s++)
             {
@@ -319,8 +345,14 @@ namespace PowderGame
                 status = new GUIStyle(label) { fontSize = 13, fontStyle = FontStyle.Normal };
             }
 
-            float vw = CanvasW, vh = CanvasH + MenuPad + Menu.Length * RowH + StatusH;
-            float s = Mathf.Min(Screen.width / vw, Screen.height / vh);
+            // Use whichever layout makes the play area bigger.
+            float bottomW = CanvasW, bottomH = CanvasH + MenuPad + Menu.Length * RowH + StatusH;
+            float sideW = CanvasW + SidePanelW, sideH = CanvasH;
+            float bottomScale = Mathf.Min(Screen.width / bottomW, Screen.height / bottomH);
+            float sideScale = Mathf.Min(Screen.width / sideW, Screen.height / sideH);
+            sideLayout = sideScale > bottomScale;
+            float vw = sideLayout ? sideW : bottomW, vh = sideLayout ? sideH : bottomH;
+            float s = sideLayout ? sideScale : bottomScale;
             var offset = new Vector3((Screen.width - vw * s) / 2, (Screen.height - vh * s) / 2, 0);
             GUI.matrix = Matrix4x4.TRS(offset, Quaternion.identity, new Vector3(s, s, 1));
 
@@ -330,10 +362,25 @@ namespace PowderGame
             if (e.type == EventType.Repaint)
             {
                 GUI.DrawTexture(new Rect(0, 0, CanvasW, CanvasH), screen);
-                FillRect(new Rect(0, CanvasH, vw, vh - CanvasH), new Color32(64, 64, 64, 255));
+                if (sideLayout) FillRect(new Rect(CanvasW, 0, SidePanelW, vh), new Color32(64, 64, 64, 255));
+                else FillRect(new Rect(0, CanvasH, vw, vh - CanvasH), new Color32(64, 64, 64, 255));
             }
             DrawMenu(e);
-            DrawStatus(vh - StatusH);
+            DrawStatus(vh);
+        }
+
+        /// <summary>Screen rectangle of the menu entry at Menu[row][col] in the current layout.</summary>
+        Rect MenuCell(int row, int col)
+        {
+            if (!sideLayout)
+            {
+                float colW = CanvasW / 6;
+                return new Rect(col * colW, CanvasH + MenuPad + row * RowH, colW, RowH);
+            }
+            // Side panel: three columns, with the right half of the menu stacked below the left half.
+            float w = SidePanelW / 3;
+            int r = col < 3 ? row : row + Menu.Length;
+            return new Rect(CanvasW + (col % 3) * w, MenuPad + r * SideRowH, w, SideRowH);
         }
 
         void HandleCanvasEvents(Event e)
@@ -370,6 +417,7 @@ namespace PowderGame
                     if (down && e.keyCode == KeyCode.Space) { running = !running; e.Use(); break; }
                     int k = Array.IndexOf(PlayerKeys, e.keyCode);
                     if (k >= 0) { keyDown[k] = down; e.Use(); }
+                    else if (down && e.keyCode == KeyCode.F11) { toggleFullscreen = true; e.Use(); }
                     break;
                 }
             }
@@ -377,14 +425,13 @@ namespace PowderGame
 
         void DrawMenu(Event e)
         {
-            float colW = CanvasW / 6;
             for (int row = 0; row < Menu.Length; row++)
             {
                 for (int col = 0; col < 6; col++)
                 {
                     string key = Menu[row][col];
                     if (key.Length == 0) continue;
-                    var rect = new Rect(col * colW, CanvasH + MenuPad + row * RowH, colW, RowH);
+                    Rect rect = MenuCell(row, col);
                     bool isAction = key[0] == '#' || key == "SAVE" || key == "LOAD" || key == "CLEAR";
 
                     if (e.type == EventType.MouseDown && rect.Contains(e.mousePosition))
@@ -438,16 +485,31 @@ namespace PowderGame
             return (byte)Mathf.Min(255, Mathf.RoundToInt(((rgb >> shift) & 255) * 0.7f + 90));
         }
 
-        void DrawStatus(float y)
+        void DrawStatus(float bottom)
         {
             if (Event.current.type != EventType.Repaint) return;
             var white = new Color32(224, 224, 224, 255);
+            var grey = new Color32(160, 160, 160, 255);
             string msg = Time.unscaledTime < flashUntil ? flashText : running ? "POWDER REMAKE" : "PAUSED";
-            Shadowed(new Rect(8, y, 220, StatusH), fps + "fps dot" + world.Count, white, status);
+            string stats = fps + "fps dot" + world.Count;
+            const string hint = "arrows/WASD: player · F11: full screen";
+            if (sideLayout)
+            {
+                // Two lines at the bottom of the side panel.
+                float x = CanvasW + 8, w = SidePanelW - 16, y = bottom - SideStatusH;
+                Shadowed(new Rect(x, y, w, SideStatusH / 2), stats, white, status);
+                status.alignment = TextAnchor.MiddleRight;
+                Shadowed(new Rect(x, y, w, SideStatusH / 2), msg, white, status);
+                status.alignment = TextAnchor.MiddleLeft;
+                Shadowed(new Rect(x, y + SideStatusH / 2, w, SideStatusH / 2), hint, grey, status);
+                return;
+            }
+            float sy = bottom - StatusH;
+            Shadowed(new Rect(8, sy, 220, StatusH), stats, white, status);
             status.alignment = TextAnchor.MiddleCenter;
-            Shadowed(new Rect(0, y, CanvasW, StatusH), msg, white, status);
+            Shadowed(new Rect(0, sy, CanvasW, StatusH), msg, white, status);
             status.alignment = TextAnchor.MiddleRight;
-            Shadowed(new Rect(0, y, CanvasW - 8, StatusH), "arrows/WASD: player · space: pause", new Color32(160, 160, 160, 255), status);
+            Shadowed(new Rect(0, sy, CanvasW - 8, StatusH), hint, grey, status);
             status.alignment = TextAnchor.MiddleLeft;
         }
 
