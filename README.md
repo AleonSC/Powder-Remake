@@ -32,7 +32,7 @@ scene list.
 | F11 | Toggle full screen (in the editor: maximize the Game view) |
 | ← → / A D | Walk player 1 / player 2 |
 | ↑ / W | Jump (swim up in liquids) |
-| ↓ / S | Shoot the material the player is carrying |
+| ↓ / S | Punch, and shoot the material the player is carrying |
 
 The drag direction matters for **FAN** (blow direction), **LASER** (beam
 direction) and **SuperBall** (launch velocity).
@@ -82,7 +82,13 @@ direction) and **SuperBall** (launch velocity).
 keys, the second WASD). It walks up small ledges, swims, and gets thrown
 around by wind and explosions. Touching a powder or liquid picks it up (the
 head turns that colour) and shooting sprays it out in front. Fire, magma,
-acid, lightning, lasers and virus are deadly. ERASE removes a player.
+acid, lightning, lasers, virus, cryo and void are deadly, and ten hits from
+fighters knock a player out. ERASE removes a player.
+
+**FIGHTER:** click (or hold) to drop AI stick figures, up to 64. They chase
+the nearest player, jumping over walls, and kick them; with no player nearby
+they wander and brawl with each other. Three hits knock a fighter out, and
+the same hazards as players kill them.
 
 **Tools:** WIND (push air the way you drag), AIR (raise pressure, blowing
 things away), DRAG (move particles), BLOCK (wall), ERASE, CLEAR.
@@ -101,7 +107,8 @@ Assets/
     Elements.cs                     material definitions and lookup tables
     World.cs                        cellular automaton + air field
     World.Materials.cs              sand, salt, wood, mercury, cloud, cryo, void...
-    World.Players.cs, Player.cs     the PLAYER stick figures
+    World.Players.cs, Player.cs     PLAYER stick figures (movement shared with fighters)
+    World.Fighters.cs               FIGHTER AI and melee combat
   Scripts/Game/PowderGameApp.cs     rendering, IMGUI menu, input, main loop
   Tests/EditMode/WorldTests.cs      NUnit physics tests
 tools/run-sim-tests.sh              runs the tests with Mono, without Unity
@@ -134,11 +141,11 @@ Without Unity (needs Mono's `mcs`): `tools/run-sim-tests.sh`.
 
 ## Web version
 
-The original browser version lives in `web/` (it does not have PLAYER or the
-materials from SAND onwards). Open `web/index.html` directly,
+The original browser version lives in `web/` (it does not have PLAYER, FIGHTER
+or the materials from SAND onwards). Open `web/index.html` directly,
 and run its tests with `cd web && npm test`.
 
 ## Not yet implemented
 
-WHEEL, FIGHTER, BOX, TEXT, COPY/PASTE, UPLOAD, GRID and BG modes from
+WHEEL, BOX, TEXT, COPY/PASTE, UPLOAD, GRID and BG modes from
 the original.

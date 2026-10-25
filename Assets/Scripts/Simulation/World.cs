@@ -124,6 +124,7 @@ namespace PowderGame.Simulation
             Array.Clear(Vx, 0, N);
             Array.Clear(Vy, 0, N);
             Array.Clear(Players, 0, MaxPlayers);
+            Fighters.Clear();
             Count = 0;
         }
 
@@ -1155,8 +1156,17 @@ namespace PowderGame.Simulation
 
         // --------------------------------------------------------- save/load
 
+        /// <summary>Shifts a loaded figure by (ox, oy); false if its body no longer fits in the world.</summary>
+        bool Place(Player p, int ox, int oy)
+        {
+            p.X += ox;
+            p.Y += oy;
+            int px = (int)Math.Floor(p.X), py = (int)Math.Floor(p.Y);
+            return px - Player.HalfWidth >= 0 && px + Player.HalfWidth < W && py - Player.Height + 1 >= 0 && py < H;
+        }
+
         const int SaveMagic = 0x52445750; // "PWDR"
-        const int SaveVersion = 2; // 2 added players
+        const int SaveVersion = 3; // 2 added players, 3 fighters
 
         public void Save(Stream stream)
         {
@@ -1178,6 +1188,13 @@ namespace PowderGame.Simulation
                     w.Write(p.X);
                     w.Write(p.Y);
                     w.Write(p.Held);
+                }
+                w.Write(Fighters.Count);
+                foreach (Player f in Fighters)
+                {
+                    w.Write(f.X);
+                    w.Write(f.Y);
+                    w.Write(f.Hp);
                 }
             }
         }
@@ -1213,6 +1230,20 @@ namespace PowderGame.Simulation
                         players[s] = new Player { X = r.ReadSingle(), Y = r.ReadSingle(), Held = r.ReadByte() };
                     }
                 }
+                var fighters = new List<Player>();
+                if (version >= 3)
+                {
+                    int count = r.ReadInt32();
+                    if (count < 0 || count > MaxFighters) throw new InvalidDataException("Bad fighter count");
+                    for (int k = 0; k < count; k++)
+                    {
+                        fighters.Add(new Player
+                        {
+                            X = r.ReadSingle(), Y = r.ReadSingle(), Hp = r.ReadInt32(),
+                            Fighter = true, Speed = FighterSpeed,
+                        });
+                    }
+                }
 
                 Clear();
                 ClearAir();
@@ -1235,13 +1266,11 @@ namespace PowderGame.Simulation
                 for (int i = 0; i < N; i++) Shade[i] = (byte)Rnd(256);
                 for (int s = 0; s < MaxPlayers; s++)
                 {
-                    Player p = players[s];
-                    if (p == null) continue;
-                    p.X += ox;
-                    p.Y += oy;
-                    int px = (int)Math.Floor(p.X), py = (int)Math.Floor(p.Y);
-                    bool fits = px - Player.HalfWidth >= 0 && px + Player.HalfWidth < W && py - Player.Height + 1 >= 0 && py < H;
-                    if (fits) Players[s] = p;
+                    if (players[s] != null && Place(players[s], ox, oy)) Players[s] = players[s];
+                }
+                foreach (Player f in fighters)
+                {
+                    if (Place(f, ox, oy)) Fighters.Add(f);
                 }
             }
         }

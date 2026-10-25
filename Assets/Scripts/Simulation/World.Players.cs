@@ -1,4 +1,5 @@
-// Player movement, hazards, picking up and shooting materials.
+// Stick-figure movement and hazards (shared by players and fighters), and the
+// players' picking up and shooting of materials.
 using System;
 
 namespace PowderGame.Simulation
@@ -55,14 +56,23 @@ namespace PowderGame.Simulation
         {
             for (int s = 0; s < MaxPlayers; s++)
             {
-                if (Players[s] != null && !StepPlayer(Players[s])) Players[s] = null;
+                if (Players[s] != null && !StepFigure(Players[s])) Players[s] = null;
             }
+            for (int k = Fighters.Count - 1; k >= 0; k--)
+            {
+                ThinkFighter(Fighters[k]);
+                if (!StepFigure(Fighters[k])) Fighters.RemoveAt(k);
+            }
+            // Attacks land after everyone has moved.
+            for (int s = 0; s < MaxPlayers; s++) if (Players[s] != null) Attack(Players[s]);
+            for (int k = 0; k < Fighters.Count; k++) Attack(Fighters[k]);
         }
 
-        /// <returns>False if the player died or left the world.</returns>
-        bool StepPlayer(Player p)
+        /// <returns>False if the figure died or left the world.</returns>
+        bool StepFigure(Player p)
         {
             int cx = (int)Math.Floor(p.X), cy = (int)Math.Floor(p.Y);
+            if (p.Dead) { KillFigure(p, cx, cy); return false; }
 
             // Check everything touching the body (one dot of margin, plus the ground).
             int liquid = 0;
@@ -72,9 +82,9 @@ namespace PowderGame.Simulation
                 {
                     byte t = At(x, y);
                     if (t == 0 || t == E.Out) continue;
-                    if (IsDeadly(t)) { KillPlayer(cx, cy); return false; }
+                    if (IsDeadly(t)) { KillFigure(p, cx, cy); return false; }
                     if (State[t] == MoveState.Liquid) liquid++;
-                    if (y <= cy && CanCarry(t)) p.Held = t;
+                    if (y <= cy && !p.Fighter && CanCarry(t)) p.Held = t;
                 }
             }
             bool inLiquid = liquid > 4;
@@ -87,7 +97,7 @@ namespace PowderGame.Simulation
 
             int dir = (p.Right ? 1 : 0) - (p.Left ? 1 : 0);
             if (dir != 0) p.Facing = dir;
-            p.Vx += (dir * WalkSpeed - p.Vx) * (p.Grounded ? 0.5f : 0.1f);
+            p.Vx += (dir * WalkSpeed * p.Speed - p.Vx) * (p.Grounded ? 0.5f : 0.1f);
             if (p.Jump && p.Grounded) p.Vy = -JumpSpeed;
             else if (p.Jump && inLiquid) p.Vy = Math.Max(p.Vy - 0.3f, -1.5f); // swim up
             p.Vy += inLiquid ? 0.04f : Gravity;
@@ -128,7 +138,7 @@ namespace PowderGame.Simulation
             if (cx < 0 || cx >= W || cy - Player.Height >= H) return false; // fell out of an open world
 
             // Shoot the carried material from the hand.
-            if (p.Shoot && p.Held != 0)
+            if (p.Shoot && p.Held != 0 && !p.Fighter)
             {
                 int sx = cx + p.Facing * (Player.HalfWidth + 2), sy = cy - 5;
                 if (At(sx, sy) == E.Empty)
@@ -141,9 +151,10 @@ namespace PowderGame.Simulation
             return true;
         }
 
-        /// <summary>The body bursts into white sparks.</summary>
-        void KillPlayer(int cx, int cy)
+        /// <summary>The body bursts into sparks: white for players, red for fighters.</summary>
+        void KillFigure(Player p, int cx, int cy)
         {
+            byte hue = (byte)(p.Fighter ? 0 : 7);
             for (int y = cy - Player.Height + 1; y <= cy; y++)
             {
                 for (int x = cx - Player.HalfWidth - 1; x <= cx + Player.HalfWidth + 1; x++)
@@ -153,7 +164,7 @@ namespace PowderGame.Simulation
                     Set(j, E.Spark);
                     Vx[j] = (Rand() - 0.5f) * 3;
                     Vy[j] = -Rand() * 2;
-                    Shade[j] = 7; // white
+                    Shade[j] = hue;
                 }
             }
         }
@@ -161,15 +172,18 @@ namespace PowderGame.Simulation
         void ErasePlayers(int cx, int cy, int r)
         {
             for (int s = 0; s < MaxPlayers; s++)
-            {
-                Player p = Players[s];
-                if (p == null) continue;
-                int px = (int)Math.Floor(p.X), py = (int)Math.Floor(p.Y);
-                // Distance from the brush centre to the nearest point of the body.
-                int dx = cx - Math.Min(Math.Max(cx, px - Player.HalfWidth), px + Player.HalfWidth);
-                int dy = cy - Math.Min(Math.Max(cy, py - Player.Height + 1), py);
-                if (dx * dx + dy * dy <= (r + 0.5f) * (r + 0.5f)) Players[s] = null;
-            }
+                if (Players[s] != null && Touches(Players[s], cx, cy, r)) Players[s] = null;
+            Fighters.RemoveAll(f => Touches(f, cx, cy, r));
+        }
+
+        /// <summary>Whether a brush of radius r at (cx, cy) touches the figure's body.</summary>
+        static bool Touches(Player p, int cx, int cy, int r)
+        {
+            int px = (int)Math.Floor(p.X), py = (int)Math.Floor(p.Y);
+            // Distance from the brush centre to the nearest point of the body.
+            int dx = cx - Math.Min(Math.Max(cx, px - Player.HalfWidth), px + Player.HalfWidth);
+            int dy = cy - Math.Min(Math.Max(cy, py - Player.Height + 1), py);
+            return dx * dx + dy * dy <= (r + 0.5f) * (r + 0.5f);
         }
     }
 }

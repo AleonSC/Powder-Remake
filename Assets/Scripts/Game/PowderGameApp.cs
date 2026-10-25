@@ -32,8 +32,8 @@ namespace PowderGame
             new[] { "SEED", "STONE", "METAL", "SNOW", "WALL", "#SIDE" },
             new[] { "GUNPOWDER", "MAGMA", "BOMB", "WOOD", "ERASE", "#PEN" },
             new[] { "FAN", "VIRUS", "LASER", "MERCURY", "PLAYER", "#SPEED" },
-            new[] { "ICE", "NITRO", "ACID", "CLOUD", "CLEAR", "#START" },
-            new[] { "SUPERBALL", "ANT", "BUBBLE", "CRYO", "", "#RESET" },
+            new[] { "ICE", "NITRO", "ACID", "CLOUD", "FIGHTER", "#START" },
+            new[] { "SUPERBALL", "ANT", "BUBBLE", "CRYO", "CLEAR", "#RESET" },
             new[] { "CLONE", "TORCH", "SMOKE", "VOID", "", "" },
         };
 
@@ -61,6 +61,7 @@ namespace PowderGame
         Vector2 dir = new Vector2(0, 1);
         int mouseButton = -1; // 0 = left, 1 = right
         bool mousePressed;    // a button went down since the last ApplyInput
+        int spawnTimer;       // frames until the next fighter while the button is held
         bool hover;
 
         // Held keys: player 1 uses the arrows, player 2 uses WASD.
@@ -221,6 +222,17 @@ namespace PowderGame
                     if (pressed && world.AddPlayer(mx, my + Player.Height / 2) == null)
                         Flash(world.Players[World.MaxPlayers - 1] != null ? "MAX 2 PLAYERS" : "NO ROOM");
                 }
+                else if (tool == "FIGHTER")
+                {
+                    // One per click, then a steady stream while held.
+                    if (pressed) spawnTimer = 0;
+                    if (--spawnTimer <= 0)
+                    {
+                        spawnTimer = 15;
+                        if (world.AddFighter(mx, my + Player.Height / 2) == null && pressed)
+                            Flash(world.Fighters.Count >= World.MaxFighters ? "MAX " + World.MaxFighters + " FIGHTERS" : "NO ROOM");
+                    }
+                }
                 else if (tool == "WIND") world.Wind(mx, my, r, d.x, d.y);
                 else if (tool == "AIR") world.AirBlast(mx, my, r);
                 else if (tool == "DRAG") world.Drag((int)prevMouse.x, (int)prevMouse.y, r, d.x, d.y);
@@ -335,8 +347,7 @@ namespace PowderGame
         }
 
         // Stick figure, relative to the feet. Head is 3x3 at rows -9..-7.
-        static readonly int[] BodyX = { 0, 0, 0, -1, -2, 1, 2 };
-        static readonly int[] BodyY = { -6, -5, -4, -5, -4, -5, -4 };
+        static readonly int[] TorsoY = { -6, -5, -4 };
         static readonly int[] LegsAX = { 0, -1, -1, -2, 1, 1, 2 }; // stride
         static readonly int[] LegsAY = { -3, -2, -1, 0, -2, -1, 0 };
         static readonly int[] LegsBX = { 0, 0, -1, -1, 1, 1 };      // passing
@@ -344,20 +355,43 @@ namespace PowderGame
 
         void DrawPlayers()
         {
-            var body = new Color32(232, 232, 232, 255);
+            var playerBody = new Color32(232, 232, 232, 255);
+            var fighterBody = new Color32(255, 128, 128, 255);
+            var hurt = new Color32(255, 240, 96, 255);
             for (int s = 0; s < World.MaxPlayers; s++)
             {
                 Player p = world.Players[s];
                 if (p == null) continue;
-                int fx = Mathf.FloorToInt(p.X), fy = Mathf.FloorToInt(p.Y);
-                Color32 head = p.Held != 0 ? lut[p.Held * 16 + 12] : body;
-                for (int y = -9; y <= -7; y++)
-                    for (int x = -1; x <= 1; x++) Plot(fx + x, fy + y, head);
-                for (int k = 0; k < BodyX.Length; k++) Plot(fx + BodyX[k], fy + BodyY[k], body);
-                bool stride = !p.Grounded || ((p.Walk >> 3) & 1) == 0;
-                int[] lx = stride ? LegsAX : LegsBX, ly = stride ? LegsAY : LegsBY;
-                for (int k = 0; k < lx.Length; k++) Plot(fx + lx[k], fy + ly[k], body);
+                Color32 body = p.Hurt > 0 ? hurt : playerBody;
+                DrawFigure(p, body, p.Held != 0 ? lut[p.Held * 16 + 12] : body);
             }
+            foreach (Player f in world.Fighters)
+            {
+                Color32 body = f.Hurt > 0 ? hurt : fighterBody;
+                DrawFigure(f, body, body);
+            }
+        }
+
+        void DrawFigure(Player p, Color32 body, Color32 head)
+        {
+            int fx = Mathf.FloorToInt(p.X), fy = Mathf.FloorToInt(p.Y);
+            for (int y = -9; y <= -7; y++)
+                for (int x = -1; x <= 1; x++) Plot(fx + x, fy + y, head);
+            foreach (int y in TorsoY) Plot(fx, fy + y, body);
+            // Arms hang down, except the front one shoots straight out while punching.
+            for (int side = -1; side <= 1; side += 2)
+            {
+                if (p.Punch > 0 && side == p.Facing)
+                    for (int k = 1; k <= 3; k++) Plot(fx + side * k, fy - 5, body);
+                else
+                {
+                    Plot(fx + side, fy - 5, body);
+                    Plot(fx + side * 2, fy - 4, body);
+                }
+            }
+            bool stride = !p.Grounded || ((p.Walk >> 3) & 1) == 0;
+            int[] lx = stride ? LegsAX : LegsBX, ly = stride ? LegsAY : LegsBY;
+            for (int k = 0; k < lx.Length; k++) Plot(fx + lx[k], fy + ly[k], body);
         }
 
         void Plot(int x, int y, Color32 c)
@@ -499,6 +533,7 @@ namespace PowderGame
                 case "DRAG": text = key; color = new Color32(224, 224, 224, 255); return;
                 case "ERASE": text = key; color = new Color32(160, 160, 160, 255); return;
                 case "PLAYER": text = key; color = new Color32(240, 220, 220, 255); return;
+                case "FIGHTER": text = key; color = new Color32(255, 140, 140, 255); return;
                 case "#VIEW": text = airView ? "VIEW AIR" : "VIEW DOT"; return;
                 case "#SIDE": text = world.SidesOpen ? "SIDE-ON" : "SIDE-OFF"; return;
                 case "#PEN": text = "PEN-S " + PenSizes[pen]; return;
