@@ -6,7 +6,7 @@ using System.IO;
 
 namespace PowderGame.Simulation
 {
-    public sealed class World
+    public sealed partial class World
     {
         public const int W = 400, H = 300, N = W * H;
         /// <summary>Air cells are AS x AS pixels.</summary>
@@ -81,6 +81,7 @@ namespace PowderGame.Simulation
             Array.Clear(Life, 0, N);
             Array.Clear(Vx, 0, N);
             Array.Clear(Vy, 0, N);
+            Array.Clear(Players, 0, MaxPlayers);
             Count = 0;
         }
 
@@ -180,6 +181,7 @@ namespace PowderGame.Simulation
                     Update(t, x, y, i);
                 }
             }
+            StepPlayers();
         }
 
         void Update(byte t, int x, int y, int i)
@@ -1015,6 +1017,7 @@ namespace PowderGame.Simulation
                     if (x >= 0 && x < W && y >= 0 && y < H) Del(y * W + x);
                 }
             }
+            ErasePlayers(cx, cy, r);
         }
 
         /// <summary>Calls fn(ai) for every air cell under a brush.</summary>
@@ -1075,7 +1078,7 @@ namespace PowderGame.Simulation
         // --------------------------------------------------------- save/load
 
         const int SaveMagic = 0x52445750; // "PWDR"
-        const int SaveVersion = 1;
+        const int SaveVersion = 2; // 2 added players
 
         public void Save(Stream stream)
         {
@@ -1089,6 +1092,15 @@ namespace PowderGame.Simulation
                 for (int i = 0; i < N; i++) w.Write(Life[i]);
                 for (int i = 0; i < N; i++) w.Write(Vx[i]);
                 for (int i = 0; i < N; i++) w.Write(Vy[i]);
+                for (int s = 0; s < MaxPlayers; s++)
+                {
+                    Player p = Players[s];
+                    w.Write(p != null);
+                    if (p == null) continue;
+                    w.Write(p.X);
+                    w.Write(p.Y);
+                    w.Write(p.Held);
+                }
             }
         }
 
@@ -1096,7 +1108,9 @@ namespace PowderGame.Simulation
         {
             using (var r = new BinaryReader(stream, System.Text.Encoding.UTF8, true))
             {
-                if (r.ReadInt32() != SaveMagic || r.ReadInt32() != SaveVersion || r.ReadInt32() != W || r.ReadInt32() != H)
+                if (r.ReadInt32() != SaveMagic) throw new InvalidDataException("Not a save file");
+                int version = r.ReadInt32();
+                if (version < 1 || version > SaveVersion || r.ReadInt32() != W || r.ReadInt32() != H)
                     throw new InvalidDataException("Incompatible save file");
                 byte[] types = r.ReadBytes(N);
                 if (types.Length != N) throw new EndOfStreamException();
@@ -1107,6 +1121,12 @@ namespace PowderGame.Simulation
                 for (int i = 0; i < N; i++) Vx[i] = r.ReadSingle();
                 for (int i = 0; i < N; i++) Vy[i] = r.ReadSingle();
                 for (int i = 0; i < N; i++) Shade[i] = (byte)Rnd(256);
+                if (version < 2) return;
+                for (int s = 0; s < MaxPlayers; s++)
+                {
+                    if (!r.ReadBoolean()) continue;
+                    Players[s] = new Player { X = r.ReadSingle(), Y = r.ReadSingle(), Held = r.ReadByte() };
+                }
             }
         }
     }

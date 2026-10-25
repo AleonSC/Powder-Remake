@@ -29,7 +29,7 @@ namespace PowderGame
             new[] { "GUNPOWDER", "MAGMA", "BOMB", "", "#VIEW", "#SIDE" },
             new[] { "FAN", "VIRUS", "LASER", "", "#PEN", "" },
             new[] { "ICE", "NITRO", "ACID", "", "#SPEED", "" },
-            new[] { "SUPERBALL", "ANT", "", "", "#START", "" },
+            new[] { "SUPERBALL", "ANT", "", "PLAYER", "#START", "" },
             new[] { "CLONE", "TORCH", "", "", "", "#RESET" },
         };
 
@@ -52,7 +52,16 @@ namespace PowderGame
         Vector2 mouse = new Vector2(-100, -100), prevMouse;
         Vector2 dir = new Vector2(0, 1);
         int mouseButton = -1; // 0 = left, 1 = right
+        bool mousePressed;    // a button went down since the last ApplyInput
         bool hover;
+
+        // Held keys: player 1 uses the arrows, player 2 uses WASD.
+        static readonly KeyCode[] PlayerKeys =
+        {
+            KeyCode.LeftArrow, KeyCode.RightArrow, KeyCode.UpArrow, KeyCode.DownArrow,
+            KeyCode.A, KeyCode.D, KeyCode.W, KeyCode.S,
+        };
+        readonly bool[] keyDown = new bool[8];
 
         string flashText = "";
         float flashUntil, fpsTimer;
@@ -95,9 +104,23 @@ namespace PowderGame
 
         // -------------------------------------------------------------- loop
 
+        void OnApplicationFocus(bool focused)
+        {
+            if (!focused) Array.Clear(keyDown, 0, keyDown.Length);
+        }
+
         void Update()
         {
             ApplyInput();
+            for (int s = 0; s < World.MaxPlayers; s++)
+            {
+                Player p = world.Players[s];
+                if (p == null) continue;
+                p.Left = keyDown[s * 4];
+                p.Right = keyDown[s * 4 + 1];
+                p.Jump = keyDown[s * 4 + 2];
+                p.Shoot = keyDown[s * 4 + 3];
+            }
             if (running)
             {
                 acc += Time.unscaledDeltaTime * Speeds[speed];
@@ -123,11 +146,19 @@ namespace PowderGame
             Vector2 d = mouse - prevMouse;
             float len = d.magnitude;
             if (len > 0.5f) dir = d / len;
+            bool pressed = mousePressed;
+            mousePressed = false;
             if (mouseButton >= 0)
             {
                 string tool = mouseButton == 1 ? right : left;
                 int r = PenSizes[pen], mx = (int)mouse.x, my = (int)mouse.y;
-                if (tool == "WIND") world.Wind(mx, my, r, d.x, d.y);
+                if (tool == "PLAYER")
+                {
+                    // One per click, centred on the cursor.
+                    if (pressed && world.AddPlayer(mx, my + Player.Height / 2) == null)
+                        Flash(world.Players[World.MaxPlayers - 1] != null ? "MAX 2 PLAYERS" : "NO ROOM");
+                }
+                else if (tool == "WIND") world.Wind(mx, my, r, d.x, d.y);
                 else if (tool == "AIR") world.AirBlast(mx, my, r);
                 else if (tool == "DRAG") world.Drag((int)prevMouse.x, (int)prevMouse.y, r, d.x, d.y);
                 else
@@ -223,9 +254,41 @@ namespace PowderGame
                     pixels[dst + x] = c;
                 }
             }
+            DrawPlayers();
             DrawCursor();
             screen.SetPixels32(pixels);
             screen.Apply(false);
+        }
+
+        // Stick figure, relative to the feet. Head is 3x3 at rows -9..-7.
+        static readonly int[] BodyX = { 0, 0, 0, -1, -2, 1, 2 };
+        static readonly int[] BodyY = { -6, -5, -4, -5, -4, -5, -4 };
+        static readonly int[] LegsAX = { 0, -1, -1, -2, 1, 1, 2 }; // stride
+        static readonly int[] LegsAY = { -3, -2, -1, 0, -2, -1, 0 };
+        static readonly int[] LegsBX = { 0, 0, -1, -1, 1, 1 };      // passing
+        static readonly int[] LegsBY = { -3, -2, -1, 0, -1, 0 };
+
+        void DrawPlayers()
+        {
+            var body = new Color32(232, 232, 232, 255);
+            for (int s = 0; s < World.MaxPlayers; s++)
+            {
+                Player p = world.Players[s];
+                if (p == null) continue;
+                int fx = Mathf.FloorToInt(p.X), fy = Mathf.FloorToInt(p.Y);
+                Color32 head = p.Held != 0 ? lut[p.Held * 16 + 12] : body;
+                for (int y = -9; y <= -7; y++)
+                    for (int x = -1; x <= 1; x++) Plot(fx + x, fy + y, head);
+                for (int k = 0; k < BodyX.Length; k++) Plot(fx + BodyX[k], fy + BodyY[k], body);
+                bool stride = !p.Grounded || ((p.Walk >> 3) & 1) == 0;
+                int[] lx = stride ? LegsAX : LegsBX, ly = stride ? LegsAY : LegsBY;
+                for (int k = 0; k < lx.Length; k++) Plot(fx + lx[k], fy + ly[k], body);
+            }
+        }
+
+        void Plot(int x, int y, Color32 c)
+        {
+            if (x >= 0 && x < W && y >= 0 && y < H) pixels[(H - 1 - y) * W + x] = c;
         }
 
         void DrawCursor()
@@ -285,6 +348,7 @@ namespace PowderGame
                     if (hover && (e.button == 0 || e.button == 1))
                     {
                         mouseButton = e.button;
+                        mousePressed = true;
                         prevMouse = mouse;
                         e.Use();
                     }
@@ -300,8 +364,14 @@ namespace PowderGame
                     }
                     break;
                 case EventType.KeyDown:
-                    if (e.keyCode == KeyCode.Space) { running = !running; e.Use(); }
+                case EventType.KeyUp:
+                {
+                    bool down = e.type == EventType.KeyDown;
+                    if (down && e.keyCode == KeyCode.Space) { running = !running; e.Use(); break; }
+                    int k = Array.IndexOf(PlayerKeys, e.keyCode);
+                    if (k >= 0) { keyDown[k] = down; e.Use(); }
                     break;
+                }
             }
         }
 
@@ -347,6 +417,7 @@ namespace PowderGame
                 case "AIR": text = key; color = new Color32(192, 192, 255, 255); return;
                 case "DRAG": text = key; color = new Color32(224, 224, 224, 255); return;
                 case "ERASE": text = key; color = new Color32(160, 160, 160, 255); return;
+                case "PLAYER": text = key; color = new Color32(240, 220, 220, 255); return;
                 case "#VIEW": text = airView ? "VIEW AIR" : "VIEW DOT"; return;
                 case "#SIDE": text = world.SidesOpen ? "SIDE-ON" : "SIDE-OFF"; return;
                 case "#PEN": text = "PEN-S " + PenSizes[pen]; return;
@@ -376,7 +447,7 @@ namespace PowderGame
             status.alignment = TextAnchor.MiddleCenter;
             Shadowed(new Rect(0, y, CanvasW, StatusH), msg, white, status);
             status.alignment = TextAnchor.MiddleRight;
-            Shadowed(new Rect(0, y, CanvasW - 8, StatusH), "L/R click: pick · wheel: pen · space: pause", new Color32(160, 160, 160, 255), status);
+            Shadowed(new Rect(0, y, CanvasW - 8, StatusH), "arrows/WASD: player · space: pause", new Color32(160, 160, 160, 255), status);
             status.alignment = TextAnchor.MiddleLeft;
         }
 

@@ -25,6 +25,9 @@ scene list.
 | Drag on the play area | Paint with that button's material or tool |
 | Mouse wheel | Change pen size |
 | Space | Pause / resume |
+| ← → / A D | Walk player 1 / player 2 |
+| ↑ / W | Jump (swim up in liquids) |
+| ↓ / S | Shoot the material the player is carrying |
 
 The drag direction matters for **FAN** (blow direction), **LASER** (beam
 direction) and **SuperBall** (launch velocity).
@@ -60,6 +63,12 @@ direction) and **SuperBall** (launch velocity).
 | ACID | Dissolves most things (slowly eats metal) |
 | BUBBLE | Floats up and pops |
 
+**PLAYER:** click to drop a stick figure (up to two; the first uses the arrow
+keys, the second WASD). It walks up small ledges, swims, and gets thrown
+around by wind and explosions. Touching a powder or liquid picks it up (the
+head turns that colour) and shooting sprays it out in front. Fire, magma,
+acid, lightning, lasers and virus are deadly. ERASE removes a player.
+
 **Tools:** WIND (push air the way you drag), AIR (raise pressure, blowing
 things away), DRAG (move particles), BLOCK (wall), ERASE, CLEAR.
 
@@ -76,6 +85,7 @@ Assets/
   Scripts/Simulation/               engine-independent simulation (no UnityEngine)
     Elements.cs                     material definitions and lookup tables
     World.cs                        400x300 cellular automaton + air field
+    World.Players.cs, Player.cs     the PLAYER stick figures
   Scripts/Game/PowderGameApp.cs     rendering, IMGUI menu, input, main loop
   Tests/EditMode/WorldTests.cs      NUnit physics tests
 tools/run-sim-tests.sh              runs the tests with Mono, without Unity
@@ -102,10 +112,10 @@ Without Unity (needs Mono's `mcs`): `tools/run-sim-tests.sh`.
 
 ## Web version
 
-The original browser version lives in `web/`. Open `web/index.html` directly,
+The original browser version lives in `web/` (it does not have PLAYER). Open `web/index.html` directly,
 and run its tests with `cd web && npm test`.
 
 ## Not yet implemented
 
-WHEEL, FIGHTER, BOX, PLAYER, TEXT, COPY/PASTE, UPLOAD, GRID and BG modes from
+WHEEL, FIGHTER, BOX, TEXT, COPY/PASTE, UPLOAD, GRID and BG modes from
 the original.
