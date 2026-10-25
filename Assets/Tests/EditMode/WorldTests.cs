@@ -112,16 +112,6 @@ namespace PowderGame.Tests
         }
 
         [Test]
-        public void SeedGrowsOnPowder()
-        {
-            var w = new World(8);
-            Fill(w, 0, W, 290, H, E.Powder);
-            for (int x = 100; x < 300; x += 20) w.Set(200 * W + x, E.Seed);
-            Run(w, 800);
-            Assert.Greater(Count(w, E.Plant), 50);
-        }
-
-        [Test]
         public void FanBlowsPowderSideways()
         {
             var w = new World(9);

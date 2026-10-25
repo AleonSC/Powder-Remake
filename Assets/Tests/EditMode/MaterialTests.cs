@@ -164,16 +164,6 @@ namespace PowderGame.Tests
         }
 
         [Test]
-        public void CloudRains()
-        {
-            var w = new World(11);
-            Fill(w, 150, 250, 50, 60, E.Cloud);
-            Run(w, 300);
-            Assert.Greater(Count(w, E.Water), 10);
-            Assert.AreEqual(1000, Count(w, E.Cloud), "cloud stays put");
-        }
-
-        [Test]
         public void CryoFreezesWaterAndBoilsAway()
         {
             var w = new World(12);
@@ -206,14 +196,5 @@ namespace PowderGame.Tests
             Assert.Less(w.Pressure[(285 / World.AS) * w.AW + 200 / World.AS], 0, "low pressure at the void");
         }
 
-        [Test]
-        public void SeedsGrowOnAsh()
-        {
-            var w = new World(15);
-            Fill(w, 0, W, 290, H, E.Ash);
-            for (int x = 100; x < 300; x += 20) w.Set(200 * W + x, E.Seed);
-            Run(w, 800);
-            Assert.Greater(Count(w, E.Plant), 50);
-        }
     }
 }

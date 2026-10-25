@@ -33,8 +33,8 @@ namespace PowderGame
             new[] { "GUNPOWDER", "MAGMA", "BOMB", "WOOD", "ERASE", "#PEN" },
             new[] { "FAN", "VIRUS", "LASER", "MERCURY", "PLAYER", "#SPEED" },
             new[] { "ICE", "NITRO", "ACID", "CLOUD", "FIGHTER", "#START" },
-            new[] { "SUPERBALL", "ANT", "BUBBLE", "CRYO", "CLEAR", "#RESET" },
-            new[] { "CLONE", "TORCH", "SMOKE", "VOID", "", "" },
+            new[] { "SUPERBALL", "ANT", "BUBBLE", "STEAM", "CLEAR", "#RESET" },
+            new[] { "CLONE", "TORCH", "SMOKE", "CRYO", "VOID", "" },
         };
 
         static float MenuH { get { return MenuPad + Menu.Length * RowH + StatusH; } }
@@ -333,6 +333,13 @@ namespace PowderGame
                             break;
                         }
                         case E.Void: c = lut[t * 16 + (((shade[i] + frame) >> 1) & 15)]; break;
+                        case E.Cloud: // darker the more steam it holds
+                        {
+                            Color32 s0 = lut[t * 16 + (shade[i] >> 4)];
+                            float f = 1 - 0.6f * Mathf.Min(1, (float)life[i] / World.CloudCapacity);
+                            c = new Color32((byte)(s0.r * f), (byte)(s0.g * f), (byte)(s0.b * f), 255);
+                            break;
+                        }
                         case E.Spark: c = sparkLut[(shade[i] & 7) * 16 + Mathf.Clamp(life[i], 0, 15)]; break;
                         case E.Bolt: c = world.Vx[i] != 0 ? laser : bolt; break;
                         default: c = lut[t * 16 + (shade[i] >> 4)]; break;

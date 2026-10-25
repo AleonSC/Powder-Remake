@@ -42,9 +42,9 @@ direction) and **SuperBall** (launch velocity).
 | Material | Behaviour |
 | --- | --- |
 | POWDER | Falls and piles up; burns slowly |
-| WATER | Flows and levels out; puts out fire; boils to steam |
+| WATER | Flows and levels out; puts out fire; boils to steam on anything hot (fire, magma, torches, burning wood) |
 | FIRE | Rises and flickers out; ignites anything flammable |
-| SEED | Falls; sprouts a plant when resting on powder; plants drink water |
+| SEED | Buried in powder (or ash) with water nearby, sprouts a branching tree with leaves; any part of the tree touching water drinks it and grows a new branch, so more water means more tree |
 | GUNPOWDER | Explodes in small chain-reacting blasts |
 | FAN | Blows air in the direction you drew it |
 | ICE | Slowly freezes neighbouring water; melts near heat |
@@ -72,9 +72,10 @@ direction) and **SuperBall** (launch velocity).
 | GLASS | Solid that acid can't eat and lasers shine straight through |
 | SALT | Dissolves in water into salt water (sinks under fresh water, never freezes, boils back to salt); melts ice and snow |
 | SNOW | Light, fluttering powder that drifts in the wind, floats, and melts near heat |
-| WOOD | Smoulders from the outside in, throwing off fire and smoke, then crumbles to ash (seeds grow on ash); water puts it out |
+| WOOD | Smoulders from the outside in, throwing off fire and smoke, then crumbles to ash (seeds grow in ash); water puts it out |
 | MERCURY | Heaviest liquid (stone floats on it); conducts electricity like metal |
-| CLOUD | Hangs in the air, drifts with the wind, rains, and now and then throws lightning |
+| CLOUD | Hangs in the air and drifts with the wind; soaks up steam and rains it back out (getting darker as it fills), and very wet clouds throw lightning. Dry clouds never rain |
+| STEAM | Rises and drifts; clouds absorb it. Steam collecting under the ceiling (or any roof) condenses into new clouds, so boiled water comes back as rain |
 | CRYO | Liquid nitrogen: freezes water, puts out fire, turns magma to stone, then boils away |
 | VOID | Black hole: swallows anything that touches it and sucks in the air around it |
 
@@ -106,7 +107,9 @@ Assets/
   Scripts/Simulation/               engine-independent simulation (no UnityEngine)
     Elements.cs                     material definitions and lookup tables
     World.cs                        cellular automaton + air field
-    World.Materials.cs              sand, salt, wood, mercury, cloud, cryo, void...
+    World.Materials.cs              sand, salt, wood, mercury, cryo, void...
+    World.Weather.cs                boiling, steam, clouds and rain
+    World.Plants.cs                 seeds and trees
     World.Players.cs, Player.cs     PLAYER stick figures (movement shared with fighters)
     World.Fighters.cs               FIGHTER AI and melee combat
   Scripts/Game/PowderGameApp.cs     rendering, IMGUI menu, input, main loop

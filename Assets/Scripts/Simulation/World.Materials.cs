@@ -1,4 +1,4 @@
-// Sand, glass, salt, snow, wood, smoke, mercury, cloud, cryo and void.
+// Sand, glass, salt, snow, wood, smoke, mercury, cryo and void.
 namespace PowderGame.Simulation
 {
     public sealed partial class World
@@ -63,19 +63,6 @@ namespace PowderGame.Simulation
         {
             Conduct(x, y, i);
             MoveLiquid(x, y, i, E.Mercury);
-        }
-
-        /// <summary>Hangs in the air, drifts with the wind, rains, and now and then throws lightning.</summary>
-        void UpdCloud(int x, int y, int i)
-        {
-            int r = AirPush(x, y, i, E.Cloud);
-            if (r == -2) return;
-            if (r == -1 && Rand() < 0.02f) r = TryMove(i, x + (Rand() < 0.5f ? -1 : 1), y);
-            if (r == -2) return;
-            if (r >= 0) { i = r; x = r % W; y = r / W; }
-            if (At(x, y + 1) != E.Empty) return;
-            if (Rand() < 0.002f) Set(i + W, E.Water);
-            else if (Rand() < 0.00003f) Set(i + W, E.Thunder);
         }
 
         /// <summary>Liquid nitrogen: freezes what it touches, then boils away.</summary>

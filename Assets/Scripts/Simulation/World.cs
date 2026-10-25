@@ -241,8 +241,8 @@ namespace PowderGame.Simulation
                     MovePowder(x, y, i, t); break;
                 case E.Seed: UpdSeed(x, y, i); break;
                 case E.Bomb: UpdBomb(x, y, i); break;
-                case E.Water: case E.Oil: case E.Nitro:
-                    MoveLiquid(x, y, i, t); break;
+                case E.Water: case E.SaltWater: UpdWater(x, y, i, t); break;
+                case E.Oil: case E.Nitro: MoveLiquid(x, y, i, t); break;
                 case E.Soapy: UpdSoapy(x, y, i); break;
                 case E.Acid: UpdAcid(x, y, i); break;
                 case E.Magma: UpdMagma(x, y, i); break;
@@ -267,7 +267,6 @@ namespace PowderGame.Simulation
                 case E.Sand: case E.Ash: MovePowder(x, y, i, t); break;
                 case E.Salt: UpdSalt(x, y, i); break;
                 case E.Snow: UpdSnow(x, y, i); break;
-                case E.SaltWater: MoveLiquid(x, y, i, t); break;
                 case E.Wood: UpdWood(x, y, i); break;
                 case E.Smoke: if (--Life[i] <= 0) Del(i); else MoveGas(x, y, i, t, 0.6f); break;
                 case E.Mercury: UpdMercury(x, y, i); break;
@@ -501,7 +500,8 @@ namespace PowderGame.Simulation
                 if (nt == 0 || nt == E.Fire) continue;
                 if (nt == E.Water || nt == E.Soapy || nt == E.SaltWater || nt == E.Cryo)
                 {
-                    if (Rand() < 0.1f) Set(j, nt == E.SaltWater ? E.Salt : nt == E.Cryo ? E.Empty : E.Steam);
+                    if (nt == E.Cryo) { if (Rand() < 0.1f) Del(j); }
+                    else if (Rand() < 0.3f) Boil(j);
                     Del(i);
                     return;
                 }
@@ -509,53 +509,6 @@ namespace PowderGame.Simulation
                 else if ((nt == E.Ice && Rand() < 0.05f) || (nt == E.Snow && Rand() < 0.2f)) Set(j, E.Water);
             }
             if (Rand() < 0.7f) MoveGas(x, y, i, E.Fire, 0.6f);
-        }
-
-        void UpdSeed(int x, int y, int i)
-        {
-            if (MovePowder(x, y, i, E.Seed) != -1) return;
-            if (Rand() < 0.02f)
-            {
-                byte below = At(x, y + 1);
-                if (below == E.Powder || below == E.Plant || below == E.Ash)
-                {
-                    Set(i, E.Plant);
-                    Life[i] = (short)(30 + Rnd(60));
-                }
-            }
-        }
-
-        int PlantNeighbors(int x, int y)
-        {
-            int n = 0;
-            for (int k = 0; k < 8; k++) if (At(x + DX8[k], y + DY8[k]) == E.Plant) n++;
-            return n;
-        }
-
-        void UpdPlant(int x, int y, int i)
-        {
-            if (Life[i] > 0 && Rand() < 0.2f)
-            {
-                int dx = Rnd(3) - 1, dy = Rand() < 0.7f ? -1 : 0;
-                if (dx != 0 || dy != 0)
-                {
-                    int nx = x + dx, ny = y + dy;
-                    if (At(nx, ny) == E.Empty && PlantNeighbors(nx, ny) <= 2)
-                    {
-                        int j = ny * W + nx;
-                        Set(j, E.Plant);
-                        Life[j] = (short)(Life[i] - 1);
-                        Life[i] = (short)(Rand() < 0.08f ? Life[i] >> 1 : 0); // sometimes keep a bud to branch
-                    }
-                }
-            }
-            // Drink water to keep growing.
-            int k = Rnd(8), wx = x + DX8[k], wy = y + DY8[k];
-            if (At(wx, wy) == E.Water && Rand() < 0.05f)
-            {
-                Del(wy * W + wx);
-                if (Life[i] < 40) Life[i] += 4;
-            }
         }
 
         void UpdBomb(int x, int y, int i)
@@ -609,9 +562,9 @@ namespace PowderGame.Simulation
                 int j = ny * W + nx;
                 if (nt == E.Water || nt == E.SaltWater || nt == E.Cryo)
                 {
-                    Set(i, E.Stone);
-                    Set(j, nt == E.Cryo ? E.Empty : E.Steam);
-                    return;
+                    if (nt == E.Cryo) Del(j); else Boil(j);
+                    if (nt == E.Cryo || Rand() < 0.25f) { Set(i, E.Stone); return; }
+                    continue;
                 }
                 if (nt == E.Ice || nt == E.Snow) Set(j, E.Water);
                 else if (nt == E.Sand) { if (Rand() < 0.05f) Set(j, E.Glass); }
@@ -620,18 +573,6 @@ namespace PowderGame.Simulation
             if (Rand() < 0.01f && At(x, y - 1) == E.Empty) Set(i - W, E.Fire);
             if (Rand() < 0.5f) MoveLiquid(x, y, i, E.Magma);
             else TryMove(i, x, y + 1);
-        }
-
-        void UpdSteam(int x, int y, int i)
-        {
-            if (--Life[i] <= 0)
-            {
-                if (Rand() < 0.5f) Set(i, E.Water); else Del(i);
-                return;
-            }
-            int k = Rnd(8);
-            if (At(x + DX8[k], y + DY8[k]) == E.Ice) { Set(i, E.Water); return; }
-            MoveGas(x, y, i, E.Steam, 0.5f);
         }
 
         void UpdBubble(int x, int y, int i)
