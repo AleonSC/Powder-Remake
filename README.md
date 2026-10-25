@@ -44,7 +44,7 @@ direction) and **SuperBall** (launch velocity).
 | POWDER | Falls and piles up; burns slowly |
 | WATER | Flows and levels out; puts out fire; boils to steam on anything hot (fire, magma, torches, burning wood) |
 | FIRE | Rises and flickers out; ignites anything flammable |
-| SEED | Buried in powder (or ash) with water nearby or damp soil, sprouts a branching tree with leaves; any part of the tree touching water drinks it and grows a new branch, so more water means more tree |
+| SEED | Buried in powder (or ash) with water nearby or damp soil, sprouts a branching tree with leaves; any part of the tree touching water drinks it and grows a new branch, so more water means more tree. Branches that grow too far from the root with nothing under them snap off and crumble into dust (sometimes dropping a seed); dust decomposes back into soil |
 | GUNPOWDER | Explodes in small chain-reacting blasts |
 | FAN | Blows air in the direction you drew it |
 | ICE | Slowly freezes neighbouring water; melts near heat |
@@ -106,6 +106,9 @@ moisture and wet ground.
 - **Soaking in:** powder that touches water becomes darker **mud**, which seeps
   its water down into dry powder, wicks it back up to a sunlit surface to dry,
   and waters seeds and trees.
+- **Plants:** water a tree drinks is held inside it, not lost. Leaves breathe it
+  out as steam, dust from snapped branches decomposes into damp soil, and
+  burning wood gives it off as steam.
 
 A lake next to a powder hill with a buried seed, with the sun on, runs the whole
 cycle by itself: the lake evaporates, clouds build, rain soaks into the hill and
@@ -113,7 +116,8 @@ the seed grows into a tree.
 
 A **sealed glass terrarium** recycles its own water: sunlight shines through the
 glass, the water inside evaporates, condenses on the walls and lid, and drips
-back into the soil.
+back into the soil. Overgrown branches snap into dust and seeds that rot back
+into soil and sprout new trees, so a terrarium can keep itself going.
 
 **Tools:** WIND (push air the way you drag), AIR (raise pressure, blowing
 things away), DRAG (move particles), BLOCK (wall), ERASE, CLEAR.

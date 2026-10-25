@@ -14,10 +14,10 @@ namespace PowderGame.Tests
             return n;
         }
 
-        /// <summary>Every drop of water, wherever it currently is.</summary>
+        /// <summary>Every drop of water, wherever it currently is, including inside plants.</summary>
         static int TotalWater(World w)
         {
-            int n = 0;
+            int n = w.PlantWater;
             for (int i = 0; i < w.N; i++)
             {
                 byte t = w.Type[i];
@@ -213,8 +213,125 @@ namespace PowderGame.Tests
                     if (!inside && (t == E.Water || t == E.Steam || t == E.Mud || t == E.Cloud)) outside++;
                 }
             Assert.AreEqual(0, outside, "nothing escaped the glass");
-            Assert.LessOrEqual(TotalWater(w), total, "no water created (the tree drinks some)");
+            Assert.AreEqual(total, TotalWater(w), "not a drop created or lost");
             Assert.Greater(Count(w, E.Plant), 10, "the seed got watered and grew");
+        }
+
+        // ------------------------------------------------------------ snapping
+
+        /// <summary>A horizontal branch hanging in mid-air, numbered outwards from a root at x0.</summary>
+        static void Branch(World w, int x0, int y, int length)
+        {
+            for (int k = 0; k < length; k++)
+            {
+                int i = y * W + x0 + k;
+                w.Set(i, E.Plant);
+                w.Vx[i] = k;
+            }
+        }
+
+        [Test]
+        public void LongBranchesSnapIntoDust()
+        {
+            var w = new World(20);
+            Branch(w, 100, 150, 120);
+            Run(w, 2000);
+            Assert.Less(Count(w, E.Plant), 120, "snapped");
+            Assert.GreaterOrEqual(Count(w, E.Plant), World.SnapLength, "only beyond the snap length");
+            Assert.Greater(Count(w, E.Dust) + Count(w, E.Powder) + Count(w, E.Seed), 0, "crumbled into dust");
+        }
+
+        [Test]
+        public void ShortBranchesHold()
+        {
+            var w = new World(21);
+            Branch(w, 100, 150, World.SnapLength);
+            Run(w, 3000);
+            Assert.AreEqual(World.SnapLength, Count(w, E.Plant));
+        }
+
+        [Test]
+        public void SupportedBranchesHold()
+        {
+            var w = new World(22);
+            Fill(w, 90, 260, 151, 152, E.Wall); // resting along a shelf
+            Branch(w, 100, 150, 120);
+            Run(w, 3000);
+            Assert.AreEqual(120, Count(w, E.Plant));
+        }
+
+        [Test]
+        public void SnappedBranchesSometimesDropSeeds()
+        {
+            int seeds = 0;
+            for (uint s = 0; s < 6; s++)
+            {
+                var w = new World(30 + s);
+                for (int b = 0; b < 4; b++) Branch(w, 20 + b * 2, 40 + b * 40, 150);
+                Run(w, 3000);
+                seeds += Count(w, E.Seed);
+            }
+            Assert.Greater(seeds, 0);
+        }
+
+        [Test]
+        public void DustDecomposesIntoSoilAndReturnsPlantWater()
+        {
+            var w = new World(23);
+            Fill(w, 100, 300, 290, H, E.Dust);
+            w.Set(10 * W + 10, E.Plant); // a plant still alive elsewhere, holding the water
+            w.PlantWater = 100;
+            Run(w, 3000);
+            Assert.Less(Count(w, E.Dust), 4000 / 2, "decomposing");
+            Assert.Greater(Count(w, E.Powder), 0, "into soil");
+            Assert.AreEqual(100, Count(w, E.Mud) + w.PlantWater, "plant water came back as damp soil");
+        }
+
+        [Test]
+        public void LeavesBreatheOutPlantWater()
+        {
+            var w = new World(24);
+            Fill(w, 100, 300, 200, 201, E.Leaf);
+            w.PlantWater = 50;
+            Run(w, 2000);
+            Assert.Less(w.PlantWater, 50, "released");
+            Assert.AreEqual(50, TotalWater(w), "as steam/clouds, none lost");
+        }
+
+        [Test]
+        public void BurningPlantsGiveOffTheirWater()
+        {
+            var w = new World(25);
+            Branch(w, 100, 150, 40);
+            w.PlantWater = 20;
+            Fill(w, 100, 140, 151, 152, E.Fire);
+            Run(w, 300);
+            Assert.AreEqual(0, Count(w, E.Plant), "burned");
+            Assert.AreEqual(20, TotalWater(w), "water went up as steam");
+        }
+
+        [Test]
+        public void TerrariumSustainsItself()
+        {
+            // A long run of a sealed, sunlit terrarium: the tree overgrows and snaps, its
+            // dust turns back into soil, and the water stays in the box the whole time.
+            var w = new World(26) { Sun = World.SunLevel.High };
+            Fill(w, 100, 300, 150, 152, E.Glass);
+            Fill(w, 100, 102, 150, H, E.Glass);
+            Fill(w, 298, 300, 150, H, E.Glass);
+            Fill(w, 102, 298, 275, H, E.Powder);
+            Fill(w, 102, 298, 265, 275, E.Water);
+            w.Set(278 * W + 200, E.Seed);
+            int total = TotalWater(w);
+            bool snapped = false;
+            for (int k = 0; k < 30000; k++)
+            {
+                w.Step();
+                if (!snapped && k % 50 == 0 && (Count(w, E.Dust) > 0)) snapped = true;
+            }
+            Assert.IsTrue(snapped, "branches snapped into dust");
+            Assert.Greater(Count(w, E.Plant), 20, "plants still alive");
+            Assert.AreEqual(total, TotalWater(w), "every drop accounted for");
         }
     }
 }

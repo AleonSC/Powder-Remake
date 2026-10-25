@@ -48,6 +48,7 @@ namespace PowderGame.Simulation
         public bool SidesOpen;
         /// <summary>Number of particles, updated every step.</summary>
         public int Count;
+        int plantCells;
 
         // Collision info written by Fly().
         bool hit, hitBX, hitBY;
@@ -127,6 +128,7 @@ namespace PowderGame.Simulation
             Array.Clear(Vy, 0, N);
             Array.Clear(Players, 0, MaxPlayers);
             Fighters.Clear();
+            PlantWater = 0;
             Count = 0;
         }
 
@@ -211,8 +213,9 @@ namespace PowderGame.Simulation
         public void Step()
         {
             Frame++;
-            StepAir();
+            StepAir();  // also counts the plant cells
             ComputeSunlight();
+            ReleaseOrphanedPlantWater(plantCells);
             int f = Frame;
             for (int y = H - 1; y >= 0; y--)
             {
@@ -242,6 +245,8 @@ namespace PowderGame.Simulation
             {
                 case E.Powder: UpdPowder(x, y, i); break;
                 case E.Mud: UpdMud(x, y, i); break;
+                case E.Dust: UpdDust(x, y, i); break;
+                case E.Leaf: UpdLeaf(x, y, i); break;
                 case E.Stone: case E.Gunpowder: case E.Fireworks:
                     MovePowder(x, y, i, t); break;
                 case E.Seed: UpdSeed(x, y, i); break;
@@ -407,6 +412,7 @@ namespace PowderGame.Simulation
                 return;
             }
             if (t == E.Fireworks) { Set(j, E.Rocket); return; }
+            if (t == E.Plant || t == E.Leaf) ReleasePlantWater(j);
             if (t == E.Ice || t == E.Snow) { Set(j, E.Water); return; }
             if (t == E.Wood) { if (Life[j] == 0) Life[j] = (short)(80 + Rnd(80)); return; }
             Set(j, E.Fire);
@@ -449,6 +455,7 @@ namespace PowderGame.Simulation
                         case E.Fireworks: Ignite(j); break;
                         case E.Bubble: Del(j); break;
                         default:
+                            if (t == E.Plant || t == E.Leaf) ReleasePlantWater(j);
                             if (Flam[t] != 0)
                             {
                                 if (Rand() < 0.7f) { Set(j, E.Fire); Life[j] = (short)(5 + Rnd(15)); }
@@ -867,7 +874,7 @@ namespace PowderGame.Simulation
         void StepAir()
         {
             Array.Clear(acount, 0, AN);
-            int count = 0;
+            int count = 0, plants = 0;
             for (int y = 0; y < H; y++)
             {
                 int row = y * W, arow = (y >> 2) * AW;
@@ -876,10 +883,12 @@ namespace PowderGame.Simulation
                     byte t = Type[row + x];
                     if (t == 0) continue;
                     count++;
+                    if (t == E.Plant || t == E.Leaf) plants++;
                     if (Elements.Blocks[t]) acount[arow + (x >> 2)]++;
                 }
             }
             Count = count;
+            plantCells = plants;
             for (int k = 0; k < AN; k++) ablock[k] = acount[k] >= AS * AS / 2;
 
             float[] vx = AirVx, vy = AirVy, p = Pressure;
@@ -1113,7 +1122,7 @@ namespace PowderGame.Simulation
         }
 
         const int SaveMagic = 0x52445750; // "PWDR"
-        const int SaveVersion = 3; // 2 added players, 3 fighters
+        const int SaveVersion = 4; // 2 added players, 3 fighters, 4 plant water
 
         public void Save(Stream stream)
         {
@@ -1143,6 +1152,7 @@ namespace PowderGame.Simulation
                     w.Write(f.Y);
                     w.Write(f.Hp);
                 }
+                w.Write(PlantWater);
             }
         }
 
@@ -1191,6 +1201,7 @@ namespace PowderGame.Simulation
                         });
                     }
                 }
+                int plantWater = version >= 4 ? r.ReadInt32() : 0;
 
                 Clear();
                 ClearAir();
@@ -1219,6 +1230,7 @@ namespace PowderGame.Simulation
                 {
                     if (Place(f, ox, oy)) Fighters.Add(f);
                 }
+                PlantWater = plantWater;
             }
         }
     }

@@ -74,7 +74,7 @@ namespace PowderGame.Tests
         /// <summary>Every drop of water, wherever it currently is.</summary>
         static int TotalWater(World w)
         {
-            int n = 0;
+            int n = w.PlantWater;
             for (int i = 0; i < w.N; i++)
             {
                 byte t = w.Type[i];

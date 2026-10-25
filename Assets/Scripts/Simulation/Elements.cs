@@ -15,7 +15,7 @@ namespace PowderGame.Simulation
             Magma = 15, Virus = 16, Nitro = 17, Ant = 18, Torch = 19, Gas = 20, Soapy = 21, Thunder = 22,
             Metal = 23, Bomb = 24, Laser = 25, Acid = 26, Bubble = 27, Plant = 28, Steam = 29, Spark = 30,
             Rocket = 31, Bolt = 32, Sand = 33, Glass = 34, Salt = 35, SaltWater = 36, Snow = 37, Wood = 38,
-            Ash = 39, Smoke = 40, Mercury = 41, Cloud = 42, Cryo = 43, Void = 44, Leaf = 45, Mud = 46;
+            Ash = 39, Smoke = 40, Mercury = 41, Cloud = 42, Cryo = 43, Void = 44, Leaf = 45, Mud = 46, Dust = 47;
 
         /// <summary>"Type" of anything outside the world.</summary>
         public const byte Out = 255;
@@ -100,6 +100,7 @@ namespace PowderGame.Simulation
             D(E.Void, "VOID", "VOID", MoveState.Static, 0x3c1450),
             D(E.Leaf, "LEAF", null, MoveState.Static, 0x50b43c, flam: 0.15f),
             D(E.Mud, "MUD", null, MoveState.Powder, 0x8c6e4b, dens: 3, air: 0.3f),
+            D(E.Dust, "DUST", null, MoveState.Powder, 0xa08060, dens: 2.5f, flam: 0.1f, air: 1),
         };
 
         public static readonly MoveState[] State = new MoveState[256];
