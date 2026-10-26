@@ -75,6 +75,7 @@ namespace PowderGame.Tests
         {
             var w = new World(4);
             Fill(w, 200, 205, 100, 200, E.Glass);
+            w.Set(99 * W + 202, E.Wall); // hung from a block
             w.Set(150 * W + 60, E.Laser);
             w.InitParticle(150 * W + 60, E.Laser, 1, 0);
             Run(w, 40);
@@ -111,6 +112,7 @@ namespace PowderGame.Tests
         {
             var w = new World(7);
             Fill(w, 180, 220, 250, 290, E.Wood);
+            w.Set(270 * W + 179, E.Wall); // welded to a block, so it burns in mid-air
             Fill(w, 180, 220, 249, 250, E.Fire);
             bool smoke = false;
             for (int k = 0; k < 3000; k++)

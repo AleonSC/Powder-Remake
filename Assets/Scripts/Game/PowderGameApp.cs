@@ -35,7 +35,7 @@ namespace PowderGame
             new[] { "ICE", "NITRO", "ACID", "CLOUD", "FIGHTER", "#START" },
             new[] { "SUPERBALL", "ANT", "BUBBLE", "STEAM", "CLEAR", "#RESET" },
             new[] { "CLONE", "TORCH", "SMOKE", "CRYO", "VOID", "#SUN" },
-            new[] { "", "", "", "", "#SHAPE", "" },
+            new[] { "", "", "", "", "#SHAPE", "#PRESET" },
         };
 
         static float MenuH { get { return MenuPad + Menu.Length * RowH + StatusH; } }
@@ -68,6 +68,7 @@ namespace PowderGame
 
         // Shape tool. A shape is dragged out from shapeStart to shapeEnd; a curve then
         // waits ("bending") for a click that sets the point it bends through.
+        int preset = -1; // last preset loaded
         Shape shape = Shape.Free;
         Shape activeShape;
         bool shaping, bending, ignoreUntilRelease;
@@ -599,7 +600,11 @@ namespace PowderGame
 
                     if (e.type == EventType.MouseDown && rect.Contains(e.mousePosition))
                     {
-                        if (isAction) { if (e.button == 0) DoAction(key); }
+                        if (isAction)
+                        {
+                            if (e.button == 0) DoAction(key);
+                            else if (e.button == 1 && key == "#PRESET") LoadPreset(preset - 1); // right-click: previous
+                        }
                         else if (e.button == 0) left = key;
                         else if (e.button == 1) right = key;
                         e.Use();
@@ -635,6 +640,7 @@ namespace PowderGame
                 case "#SPEED": text = Speeds[speed] < 1 ? "SPEED/2" : "SPEEDx" + Speeds[speed]; return;
                 case "#START": text = running ? "STOP" : "START"; return;
                 case "#RESET": text = "RESET"; return;
+                case "#PRESET": text = "PRESETS"; color = new Color32(255, 200, 120, 255); return;
                 case "#SHAPE": // the drawing mode; click to cycle
                     text = shape == Shape.Free ? "FREEHAND" : shape.ToString().ToUpperInvariant();
                     color = new Color32(160, 255, 200, 255);
@@ -702,6 +708,7 @@ namespace PowderGame
                 case "#RESET": world.Clear(); world.ClearAir(); world.Sun = World.SunLevel.Off; speed = 0; running = true; break;
                 case "#SUN": world.Sun = (World.SunLevel)(((int)world.Sun + 1) % 3); break;
                 case "#SHAPE": shape = (Shape)(((int)shape + 1) % 5); CancelShape(); break;
+                case "#PRESET": LoadPreset(preset + 1); break;
                 case "#VIEW": airView = !airView; break;
                 case "#SIDE": world.SidesOpen = !world.SidesOpen; break;
                 case "#PEN": pen = (pen + 1) % PenSizes.Length; break;
@@ -727,10 +734,20 @@ namespace PowderGame
             }
         }
 
-        void Flash(string text)
+        void LoadPreset(int index)
+        {
+            int n = Presets.Names.Length;
+            preset = ((index % n) + n) % n;
+            CancelShape();
+            Presets.Load(world, preset);
+            running = true;
+            Flash((preset + 1) + "/" + n + " " + Presets.Names[preset], 3);
+        }
+
+        void Flash(string text, float seconds = 1.2f)
         {
             flashText = text;
-            flashUntil = Time.unscaledTime + 1.2f;
+            flashUntil = Time.unscaledTime + seconds;
         }
     }
 }

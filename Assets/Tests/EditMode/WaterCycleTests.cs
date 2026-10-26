@@ -174,7 +174,9 @@ namespace PowderGame.Tests
         public void SteamCondensesOnGlass()
         {
             var w = new World(11);
-            Fill(w, 100, 300, 150, 152, E.Glass); // a glass roof
+            Fill(w, 100, 300, 150, 152, E.Glass); // a glass roof...
+            Fill(w, 98, 100, 140, 152, E.Wall);   // ...welded to blocks at each end
+            Fill(w, 300, 302, 140, 152, E.Wall);
             Fill(w, 150, 250, 200, 210, E.Steam);
             int steam = Count(w, E.Steam);
             Run(w, 400);

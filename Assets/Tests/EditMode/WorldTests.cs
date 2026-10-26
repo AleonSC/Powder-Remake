@@ -137,6 +137,7 @@ namespace PowderGame.Tests
         {
             var w = new World(10);
             Fill(w, 200, 201, 100, 200, E.Metal);
+            w.Set(99 * W + 200, E.Wall); // hung from a block
             w.Set(150 * W + 60, E.Laser);
             w.InitParticle(150 * W + 60, E.Laser, 1, 0);
             Run(w, 50);

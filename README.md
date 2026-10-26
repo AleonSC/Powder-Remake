@@ -49,7 +49,7 @@ direction) and **SuperBall** (launch velocity).
 | SEED | Buried in dirt (or ash) with water nearby or damp soil, sprouts a branching tree with leaves; any part of the tree touching water drinks it and grows a new branch, so more water means more tree. Branches that grow too far from the root with nothing under them snap off and crumble into dust (sometimes dropping a seed); dust decomposes back into dirt |
 | GUNPOWDER | Explodes in small chain-reacting blasts |
 | FAN | Blows air in the direction you drew it |
-| ICE | Slowly freezes neighbouring water; melts near heat |
+| ICE | Slowly freezes neighbouring water; melts near heat; falls as a solid piece and floats |
 | SuperBall | Bounces forever |
 | CLONE | Copies the first material that touches it |
 | FIREWORKS | Launches a rocket when lit that bursts into coloured sparks |
@@ -64,17 +64,17 @@ direction) and **SuperBall** (launch velocity).
 | GAS | Drifts around; very flammable |
 | SOAPY | Liquid that dissolves oil and makes bubbles in the wind |
 | THUNDER | Lightning bolt; electrifies metal and ignites what it hits |
-| METAL | Conducts electricity; reflects lasers |
+| METAL | Conducts electricity; mirrors lasers (diagonal lines turn the beam 90°); falls as a solid piece and sinks in liquids |
 | BOMB | Explodes on contact with anything |
-| LASER | Beam that heats, melts and ignites; bounces off metal |
+| LASER | Beam that heats, melts and ignites; turned by metal mirrors |
 | ACID | Dissolves most things (slowly eats metal) |
 | BUBBLE | Floats up and pops |
 | SMOKE | Rises and fades; fires give it off as they die |
 | SAND | Powder that melts into glass in magma or laser light; lightning fuses it into glass |
-| GLASS | Solid that acid can't eat; sunlight and lasers shine straight through; steam fogs up on it and drips back down as water |
+| GLASS | Solid that acid can't eat; sunlight and lasers shine straight through; steam fogs up on it and drips back down as water; falls as a solid piece |
 | SALT | Dissolves in water into salt water (sinks under fresh water, never freezes, boils back to salt); melts ice and snow |
 | SNOW | Light, fluttering powder that drifts in the wind, floats, and melts near heat |
-| WOOD | Smoulders from the outside in, throwing off fire and smoke, then crumbles to ash (seeds grow in ash); water puts it out |
+| WOOD | Smoulders from the outside in, throwing off fire and smoke, then crumbles to ash (seeds grow in ash); water puts it out; falls as a solid piece and floats |
 | MERCURY | Heaviest liquid (stone floats on it); conducts electricity like metal |
 | CLOUD | Hangs in the air and drifts with the wind; soaks up steam and rains it back out (getting darker as it fills), and very wet clouds throw lightning. Dry clouds never rain |
 | STEAM | Rises and drifts; clouds absorb it. Steam that rises into the top quarter of the screen condenses into new clouds, which fade away once they've rained dry |
@@ -136,7 +136,39 @@ a metal or glass curve keeps its shape, while a line of water or sand falls
 apart. Fans and lasers drawn as a line point along it.
 
 **Tools:** WIND (push air the way you drag), AIR (raise pressure, blowing
-things away), DRAG (move particles), BLOCK (wall), ERASE, CLEAR.
+things away), DRAG (move particles), BLOCK (fixed wall that never falls), ERASE, CLEAR.
+
+### Falling solids
+
+METAL, GLASS, WOOD and ICE are solid but not fixed: each connected piece falls as
+one, keeping its shape (so a drawn metal arch falls as an arch), unless it is
+resting on something or welded to BLOCK (or another fixed thing such as a torch,
+fan, clone or tree). Metal and glass are heavy and sink through liquids, pushing
+the liquid up around them; wood and ice float. To build something that hangs,
+attach it to a bit of BLOCK.
+
+### Presets
+
+**PRESETS** (bottom right) loads ready-made scenes: left-click for the next,
+right-click for the previous. They are built to fit any screen shape.
+
+| Preset | What happens |
+| --- | --- |
+| TERRARIUM | Sealed glass box with a pond, soil and a seed: sunlight keeps the water cycling and the tree growing |
+| WATER CYCLE | A lake evaporates, clouds build and rain on a hill of seeds |
+| FOUNTAIN | A tall tank drives a jet out of a low pipe |
+| U-TUBES | Three connected arms of different widths level out |
+| WATERFALL | A spring runs along a ledge and arcs off it into a pool with a seed |
+| VOLCANO | Lava wells out of a crater, runs into lakes, and boils them into storm clouds |
+| FIREWORKS | A burning gunpowder fuse sets off fireworks one by one |
+| LASER LAB | A laser emitter, a glass pane and a diagonal mirror aim a beam at sand |
+| ARENA | You against six fighters |
+| DEMOLITION | C-4 in wooden pillars brings a metal girder down |
+| BLACK HOLE | A void swallowing streams of sand and water |
+| SALT FLATS | Salt water drying to salt in strong sun |
+| FOREST | Rolling hills of seeds under rain clouds |
+| METAL DROP | Metal, glass, wood and ice shapes fall, sink, float or hang |
+| THUNDERSTORM | Storm clouds, a metal lightning rod, and gunpowder at its foot |
 
 **Settings:** VIEW toggles the air view (red = high pressure, blue = low,
 green = wind speed). SIDE opens the screen edges so particles fall out of the
@@ -154,6 +186,8 @@ Assets/
     World.Momentum.cs               falling, splashing and thrown powders and liquids
     World.Pressure.cs               liquids finding their level: U-tubes, fountains, jets
     World.Shapes.cs                 lines, curves, boxes and circles of any material
+    World.Rigid.cs                  metal, glass, wood and ice falling as solid pieces
+    Presets.cs                      the ready-made scenes
     World.Materials.cs              sand, salt, wood, mercury, cryo, void...
     World.Weather.cs                the water cycle: sun, boiling, steam, clouds, rain, mud
     World.Plants.cs                 seeds and trees

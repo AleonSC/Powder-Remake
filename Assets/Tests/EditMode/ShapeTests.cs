@@ -63,11 +63,39 @@ namespace PowderGame.Tests
         public void MetalCurvesHoldTheirShape()
         {
             var w = new World(2);
+            w.DrawShape(Shape.Line, 98, 150, 98, 160, 0, 0, 1, E.Wall, false);  // block posts the ends are welded to
+            w.DrawShape(Shape.Line, 302, 150, 302, 160, 0, 0, 1, E.Wall, false);
             w.DrawShape(Shape.Curve, 100, 150, 300, 150, 200, 100, 1, E.Metal, false);
             int before = Count(w, E.Metal);
             for (int k = 0; k < 300; k++) w.Step();
             Assert.AreEqual(before, Count(w, E.Metal));
             Assert.AreEqual(E.Metal, w.At(200, 100), "still arched");
+        }
+
+        [Test]
+        public void UnweldedMetalFallsInOnePiece()
+        {
+            var w = new World(6);
+            w.DrawShape(Shape.Curve, 100, 150, 300, 150, 200, 100, 1, E.Metal, false);
+            int before = Count(w, E.Metal), height = Height(w);
+            for (int k = 0; k < 200; k++) w.Step();
+            Assert.AreEqual(before, Count(w, E.Metal), "nothing broke off");
+            Assert.AreEqual(E.Empty, w.At(200, 100), "it fell");
+            Assert.AreEqual(height, Height(w), "still the same arch");
+            Assert.AreEqual(E.Metal, w.At(100, H - 1), "resting on the floor");
+        }
+
+        /// <summary>Rows spanned by the metal.</summary>
+        static int Height(World w)
+        {
+            int top = H, bottom = -1;
+            for (int i = 0; i < w.N; i++)
+            {
+                if (w.Type[i] != E.Metal) continue;
+                top = System.Math.Min(top, i / W);
+                bottom = System.Math.Max(bottom, i / W);
+            }
+            return bottom - top + 1;
         }
 
         [Test]

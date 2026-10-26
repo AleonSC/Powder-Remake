@@ -230,6 +230,7 @@ namespace PowderGame.Simulation
                     Update(t, x, y, i);
                 }
             }
+            StepRigid();
             StepPressure();
             StepPlayers();
         }
@@ -793,6 +794,11 @@ namespace PowderGame.Simulation
                 }
                 if (nt == E.Metal) // mirror
                 {
+                    // A diagonal run of metal turns the beam 90 degrees; a flat face bounces it back.
+                    bool back = At(nx - 1, ny - 1) == E.Metal || At(nx + 1, ny + 1) == E.Metal;  // like \
+                    bool fore = At(nx + 1, ny - 1) == E.Metal || At(nx - 1, ny + 1) == E.Metal;  // like /
+                    if (back && !fore) { int t0 = dx; dx = dy; dy = t0; continue; }
+                    if (fore && !back) { int t0 = dx; dx = -dy; dy = -t0; continue; }
                     bool bx = dx != 0 && Enterable(cx + dx, cy) == -1;
                     bool by = dy != 0 && Enterable(cx, cy + dy) == -1;
                     if (bx) dx = -dx;
