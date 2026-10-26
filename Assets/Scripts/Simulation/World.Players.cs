@@ -146,6 +146,7 @@ namespace PowderGame.Simulation
                     int j = sy * W + sx;
                     Set(j, p.Held);
                     InitParticle(j, p.Held, p.Facing, 0);
+                    if (IsLoose(p.Held)) { Vx[j] = p.Facing * 2.5f; Vy[j] = -0.8f; } // thrown
                 }
             }
             return true;

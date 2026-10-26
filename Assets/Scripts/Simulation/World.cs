@@ -308,7 +308,10 @@ namespace PowderGame.Simulation
         {
             int r = AirPush(x, y, i, t);
             if (r != -1) return r;
-            r = TryMove(i, x, y + 1);
+            if (Airborne(y, i)) return Ballistic(x, y, i, false);
+            r = Skid(x, y, i);
+            if (r != -1) return r;
+            r = TryMove(i, x, y + 1); // sink through lighter liquids
             if (r != -1) return r;
             int d = Rand() < 0.5f ? -1 : 1;
             r = TryMove(i, x + d, y + 1);
@@ -327,7 +330,8 @@ namespace PowderGame.Simulation
         {
             int r = AirPush(x, y, i, t);
             if (r != -1) return r;
-            r = TryMove(i, x, y + 1);
+            if (Airborne(y, i)) return Ballistic(x, y, i, true);
+            r = TryMove(i, x, y + 1); // sink through lighter liquids
             if (r != -1) return r;
             int dir = Rand() < 0.5f ? -1 : 1;
             r = TryMove(i, x + dir, y + 1);
@@ -354,7 +358,10 @@ namespace PowderGame.Simulation
                 cx += dir;
                 if (CanFall(cx, y + 1, t)) break;
             }
-            return ci == i ? -1 : ci;
+            // Remember the last sideways move: liquid running off a ledge keeps it and arcs.
+            if (ci == i) { if (Vx[i] != 0) Vx[i] = 0; return -1; }
+            Vx[ci] = (cx - x) * 0.4f;
+            return ci;
         }
 
         int MoveGas(int x, int y, int i, byte t, float up)
@@ -463,6 +470,7 @@ namespace PowderGame.Simulation
                             }
                             break;
                     }
+                    if (IsLoose(Type[j])) Kick(j, dx, dy, r, power);
                 }
             }
             Blast(cx, cy, r, power);

@@ -47,11 +47,13 @@ namespace NUnit.Framework
 
     public static class ShimRunner
     {
-        public static int Main()
+        /// <summary>Runs every test, or only those whose class or method name contains one of the arguments.</summary>
+        public static int Main(string[] filters)
         {
             int failed = 0;
             var tests = Assembly.GetExecutingAssembly().GetTypes()
-                .SelectMany(t => t.GetMethods().Where(m => m.GetCustomAttributes(typeof(TestAttribute), false).Length > 0));
+                .SelectMany(t => t.GetMethods().Where(m => m.GetCustomAttributes(typeof(TestAttribute), false).Length > 0))
+                .Where(m => filters.Length == 0 || filters.Any(f => (m.DeclaringType.Name + "." + m.Name).Contains(f)));
             foreach (var m in tests)
             {
                 var sw = System.Diagnostics.Stopwatch.StartNew();

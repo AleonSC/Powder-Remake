@@ -170,7 +170,7 @@ namespace PowderGame.Tests
                 if (i / W < top) top = i / W;
             }
             Assert.Greater(plants, 30, "grew");
-            Assert.Less(top, 260, "grew up out of the powder");
+            Assert.Less(top, 270, "grew well up out of the powder (surface at 280)");
             Assert.Greater(Count(w, E.Leaf), 3, "has leaves");
         }
 

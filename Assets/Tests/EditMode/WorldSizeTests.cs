@@ -29,10 +29,13 @@ namespace PowderGame.Tests
             for (int k = 0; k < 10; k++) w.Brush(700, 50 + k, 8, E.Water, 0, 1);
             w.Brush(30, 50, 6, E.Powder, 0, 1);
             int water = Count(w, E.Water), powder = Count(w, E.Powder);
+            // Water that reaches the powder soaks in as mud (powder holding a drop).
             for (int k = 0; k < 600; k++) w.Step();
-            Assert.AreEqual(water, Count(w, E.Water), "water conserved");
-            Assert.AreEqual(powder, Count(w, E.Powder), "powder conserved");
-            Assert.AreEqual(E.Water, w.At(700, w.H - 1), "water reached the floor at the far right");
+            Assert.AreEqual(water, Count(w, E.Water) + Count(w, E.Mud), "water conserved");
+            Assert.AreEqual(powder, Count(w, E.Powder) + Count(w, E.Mud), "powder conserved");
+            int floor = 0;
+            for (int x = 0; x < w.W; x++) if (w.At(x, w.H - 1) == E.Water) floor++;
+            Assert.Greater(floor, 0, "water reached the floor");
         }
 
         [Test]

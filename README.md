@@ -135,6 +135,7 @@ Assets/
   Scripts/Simulation/               engine-independent simulation (no UnityEngine)
     Elements.cs                     material definitions and lookup tables
     World.cs                        cellular automaton + air field
+    World.Momentum.cs               falling, splashing and thrown powders and liquids
     World.Materials.cs              sand, salt, wood, mercury, cryo, void...
     World.Weather.cs                the water cycle: sun, boiling, steam, clouds, rain, mud
     World.Plants.cs                 seeds and trees
@@ -148,7 +149,11 @@ web/                                the original HTML5/JavaScript version
 
 - **Simulation.** Each step scans the grid bottom-up in a random horizontal
   direction. Powders fall and slide, liquids also spread sideways, gases
-  drift up, and heavier movable particles swap places with lighter ones. A
+  drift up, and heavier movable particles swap places with lighter ones. Powders and liquids have
+  momentum: falling accelerates (up to 8 cells a frame), fast liquid splashes
+  on landing and fast powder scatters, liquid running off a ledge arcs outward,
+  explosions throw loose material, and players throw what they shoot. Things
+  falling into a liquid slow to a sink. A
   coarse 100×75 air grid (pressure + velocity, smoothed and advected every
   step) carries wind from fans, explosions and the WIND tool, and nudges
   light particles around. The simulation runs at a fixed 60 steps per second.
