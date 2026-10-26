@@ -230,6 +230,7 @@ namespace PowderGame.Simulation
                     Update(t, x, y, i);
                 }
             }
+            StepPressure();
             StepPlayers();
         }
 
@@ -309,6 +310,7 @@ namespace PowderGame.Simulation
             int r = AirPush(x, y, i, t);
             if (r != -1) return r;
             if (Airborne(y, i)) return Ballistic(x, y, i, false);
+            if (Vy[i] != 0) Vy[i] = 0; // landed
             r = Skid(x, y, i);
             if (r != -1) return r;
             r = TryMove(i, x, y + 1); // sink through lighter liquids
@@ -331,6 +333,7 @@ namespace PowderGame.Simulation
             int r = AirPush(x, y, i, t);
             if (r != -1) return r;
             if (Airborne(y, i)) return Ballistic(x, y, i, true);
+            if (Vy[i] != 0) Vy[i] = 0; // landed
             r = TryMove(i, x, y + 1); // sink through lighter liquids
             if (r != -1) return r;
             int dir = Rand() < 0.5f ? -1 : 1;

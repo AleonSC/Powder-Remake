@@ -136,6 +136,7 @@ Assets/
     Elements.cs                     material definitions and lookup tables
     World.cs                        cellular automaton + air field
     World.Momentum.cs               falling, splashing and thrown powders and liquids
+    World.Pressure.cs               liquids finding their level: U-tubes, fountains, jets
     World.Materials.cs              sand, salt, wood, mercury, cryo, void...
     World.Weather.cs                the water cycle: sun, boiling, steam, clouds, rain, mud
     World.Plants.cs                 seeds and trees
@@ -153,7 +154,13 @@ web/                                the original HTML5/JavaScript version
   momentum: falling accelerates (up to 8 cells a frame), fast liquid splashes
   on landing and fast powder scatters, liquid running off a ledge arcs outward,
   explosions throw loose material, and players throw what they shoot. Things
-  falling into a liquid slow to a sink. A
+  falling into a liquid slow to a sink.
+- **Water pressure.** Every couple of frames each connected body of resting
+  liquid finds its level: drops move from its highest surface to its lowest
+  opening. U-tubes level out, water climbs a pipe to the height of its tank,
+  narrow openings well below the surface spout jets (v = sqrt(2gh)) so pipes
+  become fountains and holes in a tank squirt, and wide surfaces just rise
+  calmly. Each liquid levels separately, so water under oil stays put. A
   coarse 100×75 air grid (pressure + velocity, smoothed and advected every
   step) carries wind from fans, explosions and the WIND tool, and nudges
   light particles around. The simulation runs at a fixed 60 steps per second.
