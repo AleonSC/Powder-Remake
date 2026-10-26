@@ -26,7 +26,7 @@ namespace PowderGame
         // original's elements in its order; the fourth holds the newer materials.
         static readonly string[][] Menu =
         {
-            new[] { "POWDER", "FIREWORKS", "GAS", "SAND", "WIND", "SAVE" },
+            new[] { "DIRT", "FIREWORKS", "GAS", "SAND", "WIND", "SAVE" },
             new[] { "WATER", "OIL", "SOAPY", "GLASS", "AIR", "LOAD" },
             new[] { "FIRE", "C4", "THUNDER", "SALT", "DRAG", "#VIEW" },
             new[] { "SEED", "STONE", "METAL", "SNOW", "WALL", "#SIDE" },
@@ -51,7 +51,7 @@ namespace PowderGame
         readonly Color32[] fireLut = new Color32[64];
         readonly Color32[] sparkLut = new Color32[8 * 16];
 
-        string left = "POWDER", right = "ERASE";
+        string left = "DIRT", right = "ERASE";
         int pen = 3, speed;
         bool running = true, airView;
         float acc;

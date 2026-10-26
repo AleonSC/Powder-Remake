@@ -19,10 +19,10 @@ namespace PowderGame.Simulation
         /// </summary>
         public int PlantWater;
 
-        static bool IsSoil(byte t) { return t == E.Powder || t == E.Ash || t == E.Mud || t == E.Dust; }
+        static bool IsSoil(byte t) { return t == E.Dirt || t == E.Ash || t == E.Mud || t == E.Dust; }
 
         /// <summary>
-        /// Falls like powder; sprouts once it is buried in soil (powder, ash or dust) and
+        /// Falls like powder; sprouts once it is buried in soil (dirt, ash or dust) and
         /// has water: damp soil (mud) around it, or a pool within a few dots.
         /// </summary>
         void UpdSeed(int x, int y, int i)
@@ -36,7 +36,7 @@ namespace PowderGame.Simulation
                 if (t == E.Mud) mud = (y + DY8[k]) * W + x + DX8[k];
             }
             if (soil < 4) return; // needs to be covered, not just sitting on top
-            if (mud >= 0) Set(mud, E.Powder); // drink from the damp soil
+            if (mud >= 0) Set(mud, E.Dirt); // drink from the damp soil
             else
             {
                 int water = FindNear(x, y, 3, E.Water);
@@ -76,7 +76,7 @@ namespace PowderGame.Simulation
             byte wt = At(wx, wy);
             if ((wt == E.Water || wt == E.Mud) && Rand() < 0.03f)
             {
-                if (wt == E.Mud) Set(wy * W + wx, E.Powder); else Del(wy * W + wx);
+                if (wt == E.Mud) Set(wy * W + wx, E.Dirt); else Del(wy * W + wx);
                 PlantWater++;
                 Life[i] = (short)(6 + Rnd(8));
                 Vy[i] = (float)(-Math.PI / 2 + (Rand() - 0.5f) * 2.4f); // mostly upward
@@ -212,7 +212,7 @@ namespace PowderGame.Simulation
 
         /// <summary>
         /// Crumbled plant matter: falls and blows about like light powder, soaks up water
-        /// like powder, and slowly decomposes into soil, damp if the plants are holding
+        /// like dirt, and slowly decomposes into dirt, damp if the plants are holding
         /// water. Seeds grow in it.
         /// </summary>
         void UpdDust(int x, int y, int i)
@@ -228,7 +228,7 @@ namespace PowderGame.Simulation
             if (Rand() < 0.001f)
             {
                 if (PlantWater > 0) { PlantWater--; Set(i, E.Mud); }
-                else Set(i, E.Powder);
+                else Set(i, E.Dirt);
             }
         }
 

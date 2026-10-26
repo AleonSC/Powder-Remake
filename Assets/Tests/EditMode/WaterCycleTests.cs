@@ -84,12 +84,12 @@ namespace PowderGame.Tests
         }
 
         [Test]
-        public void PowderSoaksUpWaterWhichSeepsDown()
+        public void DirtSoaksUpWaterWhichSeepsDown()
         {
             var w = new World(5);
             Fill(w, 96, 100, 250, H, E.Wall);
             Fill(w, 300, 304, 250, H, E.Wall);
-            Fill(w, 100, 300, 270, H, E.Powder);
+            Fill(w, 100, 300, 270, H, E.Dirt);
             Fill(w, 100, 300, 266, 270, E.Water);
             int total = TotalWater(w);
             Run(w, 1500);
@@ -108,7 +108,7 @@ namespace PowderGame.Tests
             var w = new World(6) { Sun = World.SunLevel.High };
             Fill(w, 100, 300, 290, H, E.Mud);
             Run(w, 600);
-            Assert.Greater(Count(w, E.Powder), 100, "dried");
+            Assert.Greater(Count(w, E.Dirt), 100, "dried");
             Assert.Greater(Count(w, E.Steam) + Count(w, E.Cloud), 0, "into the air");
         }
 
@@ -153,7 +153,7 @@ namespace PowderGame.Tests
             var w = new World(10) { Sun = World.SunLevel.High };
             Fill(w, 96, 100, 260, H, E.Wall);
             Fill(w, 300, 304, 260, H, E.Wall);
-            Fill(w, 100, 200, 280, H, E.Powder);
+            Fill(w, 100, 200, 280, H, E.Dirt);
             Fill(w, 200, 300, 280, H, E.Water);
             int total = TotalWater(w);
             bool clouds = false, rain = false;
@@ -191,7 +191,7 @@ namespace PowderGame.Tests
             Fill(w, 140, 260, 200, 202, E.Glass);   // lid
             Fill(w, 140, 142, 200, H, E.Glass);     // walls
             Fill(w, 258, 260, 200, H, E.Glass);
-            Fill(w, 142, 258, 280, H, E.Powder);
+            Fill(w, 142, 258, 280, H, E.Dirt);
             w.Set(284 * W + 230, E.Seed);
             Fill(w, 142, 180, 270, 280, E.Water);   // a pond at the far end from the seed
             int total = TotalWater(w);
@@ -238,7 +238,7 @@ namespace PowderGame.Tests
             Run(w, 2000);
             Assert.Less(Count(w, E.Plant), 120, "snapped");
             Assert.GreaterOrEqual(Count(w, E.Plant), World.SnapLength, "only beyond the snap length");
-            Assert.Greater(Count(w, E.Dust) + Count(w, E.Powder) + Count(w, E.Seed), 0, "crumbled into dust");
+            Assert.Greater(Count(w, E.Dust) + Count(w, E.Dirt) + Count(w, E.Seed), 0, "crumbled into dust");
         }
 
         [Test]
@@ -283,7 +283,7 @@ namespace PowderGame.Tests
             w.PlantWater = 100;
             Run(w, 3000);
             Assert.Less(Count(w, E.Dust), 4000 / 2, "decomposing");
-            Assert.Greater(Count(w, E.Powder), 0, "into soil");
+            Assert.Greater(Count(w, E.Dirt), 0, "into soil");
             Assert.AreEqual(100, Count(w, E.Mud) + w.PlantWater, "plant water came back as damp soil");
         }
 
@@ -319,7 +319,7 @@ namespace PowderGame.Tests
             Fill(w, 100, 300, 150, 152, E.Glass);
             Fill(w, 100, 102, 150, H, E.Glass);
             Fill(w, 298, 300, 150, H, E.Glass);
-            Fill(w, 102, 298, 275, H, E.Powder);
+            Fill(w, 102, 298, 275, H, E.Dirt);
             Fill(w, 102, 298, 265, 275, E.Water);
             w.Set(278 * W + 200, E.Seed);
             int total = TotalWater(w);

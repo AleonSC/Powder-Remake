@@ -243,7 +243,7 @@ namespace PowderGame.Simulation
             }
             switch (t)
             {
-                case E.Powder: UpdPowder(x, y, i); break;
+                case E.Dirt: UpdDirt(x, y, i); break;
                 case E.Mud: UpdMud(x, y, i); break;
                 case E.Dust: UpdDust(x, y, i); break;
                 case E.Leaf: UpdLeaf(x, y, i); break;
@@ -718,7 +718,7 @@ namespace PowderGame.Simulation
             if (TryMove(i, fx, y) != -1) return;
             if (At(fx, y - 1) == E.Empty && TryMove(i, fx, y - 1) != -1) return; // step up
             byte ft = At(fx, y);
-            if ((ft == E.Powder || ft == E.Seed || ft == E.Plant) && Rand() < 0.1f)
+            if ((ft == E.Dirt || ft == E.Seed || ft == E.Plant) && Rand() < 0.1f)
             {
                 Del(y * W + fx); // dig
                 return;

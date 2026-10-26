@@ -41,10 +41,10 @@ direction) and **SuperBall** (launch velocity).
 
 | Material | Behaviour |
 | --- | --- |
-| POWDER | Falls and piles up; burns slowly |
+| DIRT | Falls and piles up; soaks up water into mud; seeds grow in it; doesn't burn |
 | WATER | Flows and levels out; puts out fire; boils to steam on anything hot (fire, magma, torches, burning wood) |
 | FIRE | Rises and flickers out; ignites anything flammable |
-| SEED | Buried in powder (or ash) with water nearby or damp soil, sprouts a branching tree with leaves; any part of the tree touching water drinks it and grows a new branch, so more water means more tree. Branches that grow too far from the root with nothing under them snap off and crumble into dust (sometimes dropping a seed); dust decomposes back into soil |
+| SEED | Buried in dirt (or ash) with water nearby or damp soil, sprouts a branching tree with leaves; any part of the tree touching water drinks it and grows a new branch, so more water means more tree. Branches that grow too far from the root with nothing under them snap off and crumble into dust (sometimes dropping a seed); dust decomposes back into dirt |
 | GUNPOWDER | Explodes in small chain-reacting blasts |
 | FAN | Blows air in the direction you drew it |
 | ICE | Slowly freezes neighbouring water; melts near heat |
@@ -57,7 +57,7 @@ direction) and **SuperBall** (launch velocity).
 | MAGMA | Slow, glowing liquid; ignites things; turns to stone in water |
 | VIRUS | Spreads into anything it touches; burns |
 | NITRO | Liquid that explodes violently |
-| ANT | Walks along surfaces, climbs steps and digs through powder |
+| ANT | Walks along surfaces, climbs steps and digs through dirt |
 | TORCH | Permanent flame source |
 | GAS | Drifts around; very flammable |
 | SOAPY | Liquid that dissolves oil and makes bubbles in the wind |
@@ -103,14 +103,14 @@ moisture and wet ground.
 - **Condensation:** steam soaks into clouds, forms new ones high up, or fogs up
   on cool glass and ice and drips back down.
 - **Rain:** clouds rain out the steam they hold; dry clouds don't rain.
-- **Soaking in:** powder that touches water becomes darker **mud**, which seeps
-  its water down into dry powder, wicks it back up to a sunlit surface to dry,
+- **Soaking in:** dirt that touches water becomes darker **mud**, which seeps
+  its water down into dry dirt, wicks it back up to a sunlit surface to dry,
   and waters seeds and trees.
 - **Plants:** water a tree drinks is held inside it, not lost. Leaves breathe it
   out as steam, dust from snapped branches decomposes into damp soil, and
   burning wood gives it off as steam.
 
-A lake next to a powder hill with a buried seed, with the sun on, runs the whole
+A lake next to a dirt hill with a buried seed, with the sun on, runs the whole
 cycle by itself: the lake evaporates, clouds build, rain soaks into the hill and
 the seed grows into a tree.
 

@@ -189,10 +189,10 @@ namespace PowderGame.Tests
         {
             var w = new World(14);
             Fill(w, 190, 210, 280, 290, E.Void);
-            w.Brush(200, 200, 8, E.Powder, 0, 1);
-            int before = Count(w, E.Powder);
+            w.Brush(200, 200, 8, E.Dirt, 0, 1);
+            int before = Count(w, E.Dirt);
             Run(w, 300);
-            Assert.Less(Count(w, E.Powder), before / 4);
+            Assert.Less(Count(w, E.Dirt), before / 4);
             Assert.Less(w.Pressure[(285 / World.AS) * w.AW + 200 / World.AS], 0, "low pressure at the void");
         }
 

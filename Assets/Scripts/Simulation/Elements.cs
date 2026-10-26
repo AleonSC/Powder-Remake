@@ -10,7 +10,7 @@ namespace PowderGame.Simulation
     /// <summary>Material ids. Order must match <see cref="Elements.Defs"/>.</summary>
     public static class E
     {
-        public const byte Empty = 0, Wall = 1, Powder = 2, Water = 3, Fire = 4, Seed = 5, Gunpowder = 6,
+        public const byte Empty = 0, Wall = 1, Dirt = 2, Water = 3, Fire = 4, Seed = 5, Gunpowder = 6,
             Fan = 7, Ice = 8, SuperBall = 9, Clone = 10, Fireworks = 11, Oil = 12, C4 = 13, Stone = 14,
             Magma = 15, Virus = 16, Nitro = 17, Ant = 18, Torch = 19, Gas = 20, Soapy = 21, Thunder = 22,
             Metal = 23, Bomb = 24, Laser = 25, Acid = 26, Bubble = 27, Plant = 28, Steam = 29, Spark = 30,
@@ -55,7 +55,7 @@ namespace PowderGame.Simulation
         {
             D(E.Empty, "EMPTY", null, MoveState.None, 0x000000),
             D(E.Wall, "WALL", "BLOCK", MoveState.Static, 0x808080, blocks: true),
-            D(E.Powder, "POWDER", "POWDER", MoveState.Powder, 0xdcb486, dens: 3, flam: 0.06f, air: 0.7f),
+            D(E.Dirt, "DIRT", "DIRT", MoveState.Powder, 0xa0784f, dens: 3, air: 0.7f),
             D(E.Water, "WATER", "WATER", MoveState.Liquid, 0x3c50ff, dens: 2, air: 0.5f, disp: 5),
             D(E.Fire, "FIRE", "FIRE", MoveState.Gas, 0xff5a1e, dens: 0.05f, air: 1.2f, life0: 20, lifeR: 30),
             D(E.Seed, "SEED", "SEED", MoveState.Powder, 0xa0c878, dens: 3, flam: 0.1f, air: 0.6f),
@@ -99,7 +99,7 @@ namespace PowderGame.Simulation
             D(E.Cryo, "CRYO", "CRYO", MoveState.Liquid, 0xa0e8ff, dens: 1.6f, air: 0.5f, disp: 4, life0: 300, lifeR: 300),
             D(E.Void, "VOID", "VOID", MoveState.Static, 0x3c1450),
             D(E.Leaf, "LEAF", null, MoveState.Static, 0x50b43c, flam: 0.15f),
-            D(E.Mud, "MUD", null, MoveState.Powder, 0x8c6e4b, dens: 3, air: 0.3f),
+            D(E.Mud, "MUD", null, MoveState.Powder, 0x6e5034, dens: 3, air: 0.3f),
             D(E.Dust, "DUST", null, MoveState.Powder, 0xa08060, dens: 2.5f, flam: 0.1f, air: 1),
         };
 

@@ -29,12 +29,12 @@ namespace PowderGame.Tests
         public void PowderFallsAndPilesOnTheFloor()
         {
             var w = new World(1);
-            w.Brush(200, 50, 5, E.Powder, 0, 1);
-            int n = Count(w, E.Powder);
+            w.Brush(200, 50, 5, E.Dirt, 0, 1);
+            int n = Count(w, E.Dirt);
             Run(w, 400);
-            Assert.AreEqual(n, Count(w, E.Powder), "powder is conserved");
+            Assert.AreEqual(n, Count(w, E.Dirt), "powder is conserved");
             int floor = 0;
-            for (int x = 0; x < W; x++) if (w.Type[(H - 1) * W + x] == E.Powder) floor++;
+            for (int x = 0; x < W; x++) if (w.Type[(H - 1) * W + x] == E.Dirt) floor++;
             Assert.Greater(floor, 5, "powder reached the floor");
         }
 
@@ -124,11 +124,11 @@ namespace PowderGame.Tests
                 }
             }
             Run(w, 120);
-            w.Brush(60, 170, 6, E.Powder, 0, 1);
+            w.Brush(60, 170, 6, E.Dirt, 0, 1);
             Run(w, 120);
             double sx = 0;
             int n = 0;
-            for (int i = 0; i < w.N; i++) if (w.Type[i] == E.Powder) { sx += i % W; n++; }
+            for (int i = 0; i < w.N; i++) if (w.Type[i] == E.Dirt) { sx += i % W; n++; }
             Assert.Greater(sx / n, 90, "powder drifted right");
         }
 

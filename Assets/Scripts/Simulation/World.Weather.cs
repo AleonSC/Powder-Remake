@@ -1,5 +1,5 @@
 // The water cycle: sunlight and heat evaporate water, steam rises and condenses
-// into clouds, clouds rain, and rain soaks into the ground as mud.
+// into clouds, clouds rain, and rain soaks into the dirt as mud.
 namespace PowderGame.Simulation
 {
     public sealed partial class World
@@ -70,8 +70,8 @@ namespace PowderGame.Simulation
             MoveLiquid(x, y, i, t);
         }
 
-        /// <summary>Powder soaks up water it touches, turning into mud.</summary>
-        void UpdPowder(int x, int y, int i)
+        /// <summary>Dirt soaks up water it touches, turning into mud.</summary>
+        void UpdDirt(int x, int y, int i)
         {
             int k = Rnd(8), nx = x + DX8[k], ny = y + DY8[k];
             if (At(nx, ny) == E.Water && Rand() < 0.05f)
@@ -80,7 +80,7 @@ namespace PowderGame.Simulation
                 Set(i, E.Mud);
                 return;
             }
-            MovePowder(x, y, i, E.Powder);
+            MovePowder(x, y, i, E.Dirt);
         }
 
         // Where mud passes its moisture: below and to the sides, never up.
@@ -88,7 +88,7 @@ namespace PowderGame.Simulation
         static readonly int[] SeepY = { 1, 1, 1, 0, 0 };
 
         /// <summary>
-        /// Powder holding one drop of water. The water seeps on into dry powder below and
+        /// Dirt holding one drop of water. The water seeps on into dry dirt below and
         /// beside it, and dries out as steam in sunlight (wicking up to a sunlit surface)
         /// or near heat. Mud is sticky: it falls straight down instead of sliding off piles.
         /// </summary>
@@ -98,21 +98,21 @@ namespace PowderGame.Simulation
             if (drying && At(x, y - 1) == E.Empty)
             {
                 Set(i - W, E.Steam);
-                Set(i, E.Powder);
+                Set(i, E.Dirt);
                 return;
             }
             // A sunlit dry surface wicks moisture up from below, so soil dries all the way down.
-            if (At(x, y - 1) == E.Powder && Sunlit(x, y - 1) && Rand() < 0.02f)
+            if (At(x, y - 1) == E.Dirt && Sunlit(x, y - 1) && Rand() < 0.02f)
             {
                 Set(i - W, E.Mud);
-                Set(i, E.Powder);
+                Set(i, E.Dirt);
                 return;
             }
             int k = Rnd(SeepX.Length), nx = x + SeepX[k], ny = y + SeepY[k];
-            if (At(nx, ny) == E.Powder && Rand() < 0.05f)
+            if (At(nx, ny) == E.Dirt && Rand() < 0.05f)
             {
                 Set(ny * W + nx, E.Mud);
-                Set(i, E.Powder);
+                Set(i, E.Dirt);
                 return;
             }
             if (AirPush(x, y, i, E.Mud) == -1) TryMove(i, x, y + 1);
