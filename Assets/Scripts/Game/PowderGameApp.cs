@@ -35,6 +35,7 @@ namespace PowderGame
             new[] { "ICE", "NITRO", "ACID", "CLOUD", "FIGHTER", "#START" },
             new[] { "SUPERBALL", "ANT", "BUBBLE", "STEAM", "CLEAR", "#RESET" },
             new[] { "CLONE", "TORCH", "SMOKE", "CRYO", "VOID", "#SUN" },
+            new[] { "", "", "", "", "#SHAPE", "" },
         };
 
         static float MenuH { get { return MenuPad + Menu.Length * RowH + StatusH; } }
@@ -62,6 +63,16 @@ namespace PowderGame
         int mouseButton = -1; // 0 = left, 1 = right
         bool mousePressed;    // a button went down since the last ApplyInput
         int spawnTimer;       // frames until the next fighter while the button is held
+        bool mouseReleased;   // a button came up since the last ApplyInput
+        bool shiftHeld;
+
+        // Shape tool. A shape is dragged out from shapeStart to shapeEnd; a curve then
+        // waits ("bending") for a click that sets the point it bends through.
+        Shape shape = Shape.Free;
+        Shape activeShape;
+        bool shaping, bending, ignoreUntilRelease;
+        int shapeButton;
+        Vector2 shapeStart, shapeEnd;
         bool hover;
 
         // Held keys: player 1 uses the arrows, player 2 uses WASD.
@@ -210,8 +221,9 @@ namespace PowderGame
             Vector2 d = mouse - prevMouse;
             float len = d.magnitude;
             if (len > 0.5f) dir = d / len;
-            bool pressed = mousePressed;
-            mousePressed = false;
+            bool pressed = mousePressed, released = mouseReleased;
+            mousePressed = mouseReleased = false;
+            if (HandleShape(pressed, released)) { prevMouse = mouse; return; }
             if (mouseButton >= 0)
             {
                 string tool = mouseButton == 1 ? right : left;
@@ -252,6 +264,62 @@ namespace PowderGame
                 }
             }
             prevMouse = mouse;
+        }
+
+        static bool IsMaterialTool(string tool) { return tool == "ERASE" || Elements.IdOf(tool) >= 0; }
+
+        /// <summary>Drives the shape tool; returns true while the mouse is busy with a shape.</summary>
+        bool HandleShape(bool pressed, bool released)
+        {
+            if (ignoreUntilRelease)
+            {
+                if (mouseButton >= 0) return true;
+                ignoreUntilRelease = false;
+            }
+            if (bending)
+            {
+                if (pressed)
+                {
+                    CommitShape((int)mouse.x, (int)mouse.y);
+                    bending = false;
+                    ignoreUntilRelease = true; // don't paint with the click that placed it
+                }
+                return true;
+            }
+            if (shaping)
+            {
+                shapeEnd = mouse;
+                if (released || mouseButton < 0)
+                {
+                    shaping = false;
+                    if (activeShape == Shape.Curve) bending = true;
+                    else CommitShape(0, 0);
+                }
+                return true;
+            }
+            if (!pressed || mouseButton < 0) return false;
+            if (!IsMaterialTool(mouseButton == 1 ? right : left)) return false;
+            activeShape = shape != Shape.Free ? shape : shiftHeld ? Shape.Line : Shape.Free;
+            if (activeShape == Shape.Free) return false;
+            shaping = true;
+            shapeButton = mouseButton;
+            shapeStart = shapeEnd = mouse;
+            return true;
+        }
+
+        void CommitShape(int bendX, int bendY)
+        {
+            string tool = shapeButton == 1 ? right : left;
+            if (!IsMaterialTool(tool)) return;
+            bool erase = tool == "ERASE";
+            world.DrawShape(activeShape, (int)shapeStart.x, (int)shapeStart.y, (int)shapeEnd.x, (int)shapeEnd.y,
+                bendX, bendY, PenSizes[pen], erase ? E.Empty : (byte)Elements.IdOf(tool), erase);
+        }
+
+        void CancelShape()
+        {
+            shaping = bending = false;
+            ignoreUntilRelease = mouseButton >= 0;
         }
 
         // ------------------------------------------------------------ render
@@ -352,6 +420,7 @@ namespace PowderGame
                 }
             }
             DrawPlayers();
+            DrawShapePreview();
             DrawCursor();
             screen.SetPixels32(pixels);
             screen.Apply(false);
@@ -403,6 +472,19 @@ namespace PowderGame
             bool stride = !p.Grounded || ((p.Walk >> 3) & 1) == 0;
             int[] lx = stride ? LegsAX : LegsBX, ly = stride ? LegsAY : LegsBY;
             for (int k = 0; k < lx.Length; k++) Plot(fx + lx[k], fy + ly[k], body);
+        }
+
+        /// <summary>Outlines the shape being drawn, in the colour of its material (red for erasing).</summary>
+        void DrawShapePreview()
+        {
+            if (!shaping && !bending) return;
+            string tool = shapeButton == 1 ? right : left;
+            int id = Elements.IdOf(tool);
+            Color32 c = id > 0 ? lut[id * 16 + 15] : new Color32(255, 80, 80, 255);
+            int bx = (int)mouse.x, by = (int)mouse.y;
+            if (shaping) { bx = (int)((shapeStart.x + shapeEnd.x) / 2); by = (int)((shapeStart.y + shapeEnd.y) / 2); } // straight until bent
+            World.TraceShape(activeShape, (int)shapeStart.x, (int)shapeStart.y, (int)shapeEnd.x, (int)shapeEnd.y, bx, by,
+                (x, y) => Plot(x, y, c));
         }
 
         void Plot(int x, int y, Color32 c)
@@ -465,6 +547,7 @@ namespace PowderGame
         void HandleCanvasEvents(Event e)
         {
             Vector2 mp = e.mousePosition;
+            shiftHeld = e.shift;
             hover = mp.x >= 0 && mp.x < canvasW && mp.y >= 0 && mp.y < canvasH;
             if (hover || mouseButton >= 0) mouse = new Vector2(Mathf.Floor(mp.x / Dot), Mathf.Floor(mp.y / Dot));
 
@@ -480,7 +563,7 @@ namespace PowderGame
                     }
                     break;
                 case EventType.MouseUp:
-                    if (mouseButton >= 0) { mouseButton = -1; e.Use(); }
+                    if (mouseButton >= 0) { mouseButton = -1; mouseReleased = true; e.Use(); }
                     break;
                 case EventType.ScrollWheel:
                     if (hover)
@@ -494,6 +577,7 @@ namespace PowderGame
                 {
                     bool down = e.type == EventType.KeyDown;
                     if (down && e.keyCode == KeyCode.Space) { running = !running; e.Use(); break; }
+                    if (down && e.keyCode == KeyCode.Escape) { CancelShape(); e.Use(); break; }
                     int k = Array.IndexOf(PlayerKeys, e.keyCode);
                     if (k >= 0) { keyDown[k] = down; e.Use(); }
                     else if (down && e.keyCode == KeyCode.F11) { toggleFullscreen = true; e.Use(); }
@@ -551,6 +635,10 @@ namespace PowderGame
                 case "#SPEED": text = Speeds[speed] < 1 ? "SPEED/2" : "SPEEDx" + Speeds[speed]; return;
                 case "#START": text = running ? "STOP" : "START"; return;
                 case "#RESET": text = "RESET"; return;
+                case "#SHAPE": // the drawing mode; click to cycle
+                    text = shape == Shape.Free ? "FREEHAND" : shape.ToString().ToUpperInvariant();
+                    color = new Color32(160, 255, 200, 255);
+                    return;
                 case "#SUN":
                     text = world.Sun == World.SunLevel.Off ? "SUN OFF" : world.Sun == World.SunLevel.Low ? "SUN LOW" : "SUN HIGH";
                     color = new Color32(255, 220, 96, 255);
@@ -613,6 +701,7 @@ namespace PowderGame
                 case "CLEAR": world.Clear(); break;
                 case "#RESET": world.Clear(); world.ClearAir(); world.Sun = World.SunLevel.Off; speed = 0; running = true; break;
                 case "#SUN": world.Sun = (World.SunLevel)(((int)world.Sun + 1) % 3); break;
+                case "#SHAPE": shape = (Shape)(((int)shape + 1) % 5); CancelShape(); break;
                 case "#VIEW": airView = !airView; break;
                 case "#SIDE": world.SidesOpen = !world.SidesOpen; break;
                 case "#PEN": pen = (pen + 1) % PenSizes.Length; break;

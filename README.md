@@ -29,6 +29,8 @@ scene list.
 | Drag on the play area | Paint with that button's material or tool |
 | Mouse wheel | Change pen size |
 | Space | Pause / resume |
+| Shift + drag | Draw a straight line with the current material |
+| Esc | Cancel the shape being drawn |
 | F11 | Toggle full screen (in the editor: maximize the Game view) |
 | ← → / A D | Walk player 1 / player 2 |
 | ↑ / W | Jump (swim up in liquids) |
@@ -119,6 +121,20 @@ glass, the water inside evaporates, condenses on the walls and lid, and drips
 back into the soil. Overgrown branches snap into dust and seeds that rot back
 into soil and sprout new trees, so a terrarium can keep itself going.
 
+### Drawing shapes
+
+The drawing-mode button (bottom of the tools column) cycles **FREEHAND → LINE →
+CURVE → BOX → CIRCLE**, and works with any material or ERASE:
+
+- **LINE / BOX:** drag from one end (or corner) to the other and let go.
+- **CIRCLE:** drag from the centre out to the edge.
+- **CURVE:** drag from end to end and let go, then move the mouse to bend it and
+  click; the curve passes through that point.
+
+Shapes are drawn as a solid stroke as thick as PEN-S, then physics takes over:
+a metal or glass curve keeps its shape, while a line of water or sand falls
+apart. Fans and lasers drawn as a line point along it.
+
 **Tools:** WIND (push air the way you drag), AIR (raise pressure, blowing
 things away), DRAG (move particles), BLOCK (wall), ERASE, CLEAR.
 
@@ -137,6 +153,7 @@ Assets/
     World.cs                        cellular automaton + air field
     World.Momentum.cs               falling, splashing and thrown powders and liquids
     World.Pressure.cs               liquids finding their level: U-tubes, fountains, jets
+    World.Shapes.cs                 lines, curves, boxes and circles of any material
     World.Materials.cs              sand, salt, wood, mercury, cryo, void...
     World.Weather.cs                the water cycle: sun, boiling, steam, clouds, rain, mud
     World.Plants.cs                 seeds and trees
